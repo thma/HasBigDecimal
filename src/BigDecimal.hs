@@ -1,13 +1,14 @@
 module BigDecimal where
 
-data RoundingMode = ROUND_UP           -- Rounding mode to round away from zero.
-                  | ROUND_DOWN         -- Rounding mode to round towards zero.
-                  | ROUND_CEILING      -- Rounding mode to round towards positive infinity.
-                  | ROUND_FLOOR        -- Rounding mode to round towards negative infinity.
-                  | ROUND_HALF_UP      -- Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, in which case round up.
-                  | ROUND_HALF_DOWN    -- Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, in which case round down.
-                  | ROUND_HALF_EVEN    -- Rounding mode to round towards the "nearest neighbor" unless both neighbors are equidistant, in which case, round towards the even neighbor.
-                  -- | ROUND_UNNECESSARY  -- Rounding mode to assert that the requested operation has an exact result, hence no rounding is necessary.
+data RoundingMode =
+    ROUND_UP           -- Rounding mode to round away from zero.
+  | ROUND_DOWN         -- Rounding mode to round towards zero.
+  | ROUND_CEILING      -- Rounding mode to round towards positive infinity.
+  | ROUND_FLOOR        -- Rounding mode to round towards negative infinity.
+  | ROUND_HALF_UP      -- Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, in which case round up.
+  | ROUND_HALF_DOWN    -- Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, in which case round down.
+  | ROUND_HALF_EVEN    -- Rounding mode to round towards the "nearest neighbor" unless both neighbors are equidistant, in which case, round towards the even neighbor.
+  | ROUND_UNNECESSARY  -- Rounding mode to assert that the requested operation has an exact result, hence no rounding is necessary.
 
 data BigDecimal = BigDecimal Integer Integer deriving (Show, Read, Eq)
 instance Num BigDecimal where
@@ -34,10 +35,12 @@ mul (BigDecimal integerA scaleA, BigDecimal integerB scaleB)
 
 -- | divide two BigDecimals
 divi :: (BigDecimal, BigDecimal) -> BigDecimal
-divi (BigDecimal numA digitsA, BigDecimal numB digitsB) = 
-    BigDecimal 
-        (round $ fromInteger numA / fromInteger numB *10^16) 
-        16
+divi (BigDecimal numA digitsA, BigDecimal numB digitsB) =
+    let maxPrecision = undefined --round $ 10 * precision numB / 3
+    in
+      BigDecimal
+        (round $ fromInteger numA / fromInteger numB *10^maxPrecision)
+        maxPrecision
 
 -- | match the scales of a tuple of BigDecimals
 matchDigits :: (BigDecimal, BigDecimal) -> (BigDecimal, BigDecimal)
@@ -46,8 +49,17 @@ matchDigits (a@(BigDecimal integerA scaleA), b@(BigDecimal integerB scaleB))
     | scaleA > scaleB = (a, BigDecimal (integerB * 10^(scaleA-scaleB)) scaleA)
     | otherwise       = (a, b)
 
+--
+precision :: Integer -> Integer
+precision 0    = 1
+precision val  = 1 + floor (logBase 10 $ fromInteger val)
+
+
 
 a = BigDecimal 1234 2
 b = BigDecimal 5678 3
 ad = 12.34
-bd = 5.678    
+bd = 5.678
+
+one = BigDecimal 1 0
+thirtyTwo = BigDecimal 32 0
