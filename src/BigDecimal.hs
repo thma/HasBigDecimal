@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 module BigDecimal where
 
 data RoundingMode =
@@ -20,7 +21,7 @@ instance Num BigDecimal where
     negate (BigDecimal num digits) = BigDecimal (-num) digits
 
 instance Fractional BigDecimal where
-    a / b = divi $ matchDigits (a ,b)
+    a / b = divDefault $ matchDigits (a ,b)
     fromRational = undefined
 
 -- | add two BigDecimals with same precision
@@ -33,13 +34,13 @@ mul :: (BigDecimal, BigDecimal) -> BigDecimal
 mul (BigDecimal integerA scaleA, BigDecimal integerB scaleB)
     = BigDecimal (integerA * integerB) (scaleA + scaleB)
 
--- | divide two BigDecimals
-divi :: (BigDecimal, BigDecimal) -> BigDecimal
-divi (BigDecimal numA digitsA, BigDecimal numB digitsB) =
-    let maxPrecision = undefined --round $ 10 * precision numB / 3
-    in
+-- | divide two BigDecimals. Rounding occurs only in case of non-terminating decimal expansion
+divDefault :: (BigDecimal, BigDecimal) -> BigDecimal
+divDefault (BigDecimal numA digitsA, BigDecimal numB digitsB) =
+    let maxPrecision = precision numA + round (fromInteger (precision numB) * 10 / 3)
+    in shrink $
       BigDecimal
-        (round $ fromInteger numA / fromInteger numB *10^maxPrecision)
+        (round $ fromInteger numA / fromInteger numB * 10^maxPrecision)
         maxPrecision
 
 -- | match the scales of a tuple of BigDecimals
@@ -52,8 +53,16 @@ matchDigits (a@(BigDecimal integerA scaleA), b@(BigDecimal integerB scaleB))
 --
 precision :: Integer -> Integer
 precision 0    = 1
-precision val  = 1 + floor (logBase 10 $ fromInteger val)
+precision val  = 1 + floor (logBase 10 $ abs $ fromInteger val)
 
+-- removes trailing zeros from a BigDecimals intValue by decreasing the scale
+shrink :: BigDecimal -> BigDecimal
+shrink bd@(BigDecimal val scale) =
+  let r = mod val 10
+      v = div val 10
+  in case r of
+        0 -> shrink $ BigDecimal v (scale-1)
+        _ -> bd
 
 
 a = BigDecimal 1234 2
@@ -62,4 +71,8 @@ ad = 12.34
 bd = 5.678
 
 one = BigDecimal 1 0
+three = BigDecimal 3 0
+four = BigDecimal 4 0
+five = BigDecimal 5 0
+nine = BigDecimal 9 0
 thirtyTwo = BigDecimal 32 0
