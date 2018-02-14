@@ -37,17 +37,28 @@ mul (BigDecimal integerA scaleA, BigDecimal integerB scaleB)
 divDefault :: (BigDecimal, BigDecimal) -> BigDecimal
 divDefault (BigDecimal numA digitsA, BigDecimal numB digitsB) =
     let maxPrecision = precision numA + round (fromInteger (precision numB) * 10 / 3)
-    in shrink $
+    in shrink 0 $
       BigDecimal
         (round $ fromInteger numA / fromInteger numB * 10^maxPrecision)
         maxPrecision
 
 divide :: BigDecimal -> BigDecimal -> RoundingMode -> Integer -> BigDecimal
-divide (BigDecimal numA digitsA) (BigDecimal numB digitsB) rMode prefScale =
-    undefined
---    let maxPrecision = precision numA + round (fromInteger (precision numB) * 10 / 3)
+divide a b rMode prefScale =
+    let
+       (BigDecimal numA digitsA, BigDecimal numB digitsB) = matchDigits (a, b)
+       maxPrecision = precision numA + round (fromInteger (precision numB) * 10 / 3)
+    in shrink prefScale
+      (BigDecimal
+        (divUsing rMode numA numB * 10^maxPrecision)
+        maxPrecision)
 
-
+divUsing :: RoundingMode -> Integer -> Integer -> Integer
+divUsing rMode a b =
+  let quot = div a b
+      rem  = mod a b
+  in case rMode of
+        ROUND_UNNECESSARY -> if rem == 0 then quot else error "non-terminating decimal expansion"
+        _                 -> round (fromInteger a / fromInteger b)
 
 -- | match the scales of a tuple of BigDecimals
 matchDigits :: (BigDecimal, BigDecimal) -> (BigDecimal, BigDecimal)
@@ -62,13 +73,13 @@ precision 0    = 1
 precision val  = 1 + floor (logBase 10 $ abs $ fromInteger val)
 
 -- removes trailing zeros from a BigDecimals intValue by decreasing the scale
-shrink :: BigDecimal -> BigDecimal
-shrink bd@(BigDecimal val scale) =
+shrink :: Integer -> BigDecimal -> BigDecimal
+shrink prefScale bd@(BigDecimal val scale)  =
   let r = mod val 10
       v = div val 10
-  in case r of
-        0 -> shrink $ BigDecimal v (scale-1)
-        _ -> bd
+  in if r == 0 && prefScale < scale
+       then shrink prefScale $ BigDecimal v (scale-1)
+       else bd
 
 
 a = BigDecimal 1234 2
