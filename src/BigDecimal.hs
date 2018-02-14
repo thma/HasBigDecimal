@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 module BigDecimal where
 
 data RoundingMode =
@@ -42,6 +41,13 @@ divDefault (BigDecimal numA digitsA, BigDecimal numB digitsB) =
       BigDecimal
         (round $ fromInteger numA / fromInteger numB * 10^maxPrecision)
         maxPrecision
+
+divide :: BigDecimal -> BigDecimal -> RoundingMode -> Integer -> BigDecimal
+divide (BigDecimal numA digitsA) (BigDecimal numB digitsB) rMode prefScale =
+    undefined
+--    let maxPrecision = precision numA + round (fromInteger (precision numB) * 10 / 3)
+
+
 
 -- | match the scales of a tuple of BigDecimals
 matchDigits :: (BigDecimal, BigDecimal) -> (BigDecimal, BigDecimal)
