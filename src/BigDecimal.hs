@@ -1,5 +1,7 @@
 module BigDecimal where
 
+import Data.List
+
 data RoundingMode =
     ROUND_UP           -- Rounding mode to round away from zero.
   | ROUND_DOWN         -- Rounding mode to round towards zero.
@@ -46,10 +48,10 @@ divide :: BigDecimal -> BigDecimal -> RoundingMode -> Integer -> BigDecimal
 divide a b rMode prefScale =
     let
        (BigDecimal numA digitsA, BigDecimal numB digitsB) = matchDigits (a, b)
-       maxPrecision = precision numA + round (fromInteger (precision numB) * 10 / 3)
+       maxPrecision = max prefScale $ precision numA + round (fromInteger (precision numB) * 10 / 3)
     in shrink prefScale
       (BigDecimal
-        (divUsing rMode numA numB * 10^maxPrecision)
+        (divUsing rMode (numA * 10^maxPrecision) numB)
         maxPrecision)
 
 divUsing :: RoundingMode -> Integer -> Integer -> Integer
@@ -77,10 +79,24 @@ shrink :: Integer -> BigDecimal -> BigDecimal
 shrink prefScale bd@(BigDecimal val scale)  =
   let r = mod val 10
       v = div val 10
-  in if r == 0 && prefScale < scale
+  in if r == 0 && 0 <= prefScale && prefScale < scale
        then shrink prefScale $ BigDecimal v (scale-1)
        else bd
 
+toBD :: String -> BigDecimal
+toBD s =
+  let maybeIndex = elemIndex '.' s
+      intValue   = read (filter (/= '.') s) :: Integer
+  in case maybeIndex of
+        Nothing -> BigDecimal intValue 0
+        Just i  -> BigDecimal intValue $ toInteger (length s - i - 1)
+
+toString :: BigDecimal -> String
+toString bd@(BigDecimal intValue scale) =
+  let s            = show intValue
+      (first, sec) = splitAt (length s - fromInteger scale) s
+  in
+    first ++ "." ++ sec
 
 a = BigDecimal 1234 2
 b = BigDecimal 5678 3
