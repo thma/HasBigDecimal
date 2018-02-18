@@ -1,6 +1,7 @@
 module BigDecimal where
 
 import Data.List
+import Data.Maybe (fromMaybe)
 
 data RoundingMode =
     ROUND_UP           -- Rounding mode to round away from zero.
@@ -22,7 +23,7 @@ instance Num BigDecimal where
     negate (BigDecimal num digits) = BigDecimal (-num) digits
 
 instance Fractional BigDecimal where
-    a / b = divDefault $ matchDigits (a ,b)
+    a / b = divide (matchDigits (a ,b)) ROUND_UP Nothing
     fromRational = undefined
 
 -- | add two BigDecimals with same precision
@@ -35,23 +36,19 @@ mul :: (BigDecimal, BigDecimal) -> BigDecimal
 mul (BigDecimal integerA scaleA, BigDecimal integerB scaleB)
     = BigDecimal (integerA * integerB) (scaleA + scaleB)
 
--- | divide two BigDecimals. Rounding occurs only in case of non-terminating decimal expansion
-divDefault :: (BigDecimal, BigDecimal) -> BigDecimal
-divDefault (BigDecimal numA digitsA, BigDecimal numB digitsB) =
-    let maxPrecision = precision numA + round (fromInteger (precision numB) * 10 / 3)
-    in shrink 0 $
-      BigDecimal
-        (round $ fromInteger numA / fromInteger numB * 10^maxPrecision)
-        maxPrecision
-
-divide :: BigDecimal -> BigDecimal -> RoundingMode -> Integer -> BigDecimal
-divide a b rMode prefScale =
+-- | divide two BigDecimals with applying the RoundingMode and the specified Precicion
+-- | if Nothing if given as precision the maximum possible precision is used
+divide :: (BigDecimal, BigDecimal) -> RoundingMode -> Maybe Integer -> BigDecimal
+divide (a, b) rMode prefScale =
     let
        (BigDecimal numA digitsA, BigDecimal numB digitsB) = matchDigits (a, b)
-       maxPrecision = max prefScale $ precision numA + round (fromInteger (precision numB) * 10 / 3)
-    in shrink prefScale
+       maxPrecision =
+          fromMaybe
+            (precision numA + round (fromInteger (precision numB) * 10 / 3))
+            prefScale
+    in shrink maxPrecision
       (BigDecimal
-        (divUsing rMode (numA * 10^maxPrecision) numB)
+        (divUsing rMode (numA * (10::Integer)^maxPrecision) numB)
         maxPrecision)
 
 divUsing :: RoundingMode -> Integer -> Integer -> Integer
@@ -60,7 +57,7 @@ divUsing rMode a b =
       rem  = mod a b
   in case rMode of
         ROUND_UNNECESSARY -> if rem == 0 then quot else error "non-terminating decimal expansion"
-        _                 -> round (fromInteger a / fromInteger b)
+        _                 -> quot --round (fromInteger a / fromInteger b)
 
 -- | match the scales of a tuple of BigDecimals
 matchDigits :: (BigDecimal, BigDecimal) -> (BigDecimal, BigDecimal)
