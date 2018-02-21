@@ -53,10 +53,13 @@ divide (a, b) rMode prefScale =
 
 divUsing :: RoundingMode -> Integer -> Integer -> Integer
 divUsing rMode a b =
-  let quot = div a b
-      rem  = mod a b
+  let (quot, rem) = quotRem a b
+      delta = (10 * rem `div` b) - 5
   in case rMode of
         ROUND_UNNECESSARY -> if rem == 0 then quot else error "non-terminating decimal expansion"
+        ROUND_UP          -> if rem >  0 then quot + 1 else quot
+        ROUND_HALF_UP     -> if delta >= 0 then quot + 1 else quot
+        ROUND_HALF_DOWN   -> if delta <= 0 then quot else quot + 1
         _                 -> quot --round (fromInteger a / fromInteger b)
 
 -- | match the scales of a tuple of BigDecimals
