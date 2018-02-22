@@ -1,4 +1,4 @@
-module BigDecimal where
+module Data.BigDecimal where
 
 import Data.List
 import Data.Maybe (fromMaybe)
