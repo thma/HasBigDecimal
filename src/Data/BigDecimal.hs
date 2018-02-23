@@ -93,15 +93,16 @@ toBD s =
 
 toString :: BigDecimal -> String
 toString bd@(BigDecimal intValue scale) =
-  let s                = show intValue
+  let s                = show $ abs intValue
       filled           = if fromInteger scale >= length s
                          then replicate (1 + fromInteger scale - length s) '0' ++ s
                          else s
       splitPos         = length filled - fromInteger scale
       (ints, decimals) = splitAt splitPos filled
+      sign             = if (intValue < 0) then "-" else ""
   in
-    if splitPos >= 0 then ints ++ "." ++ decimals
-    else show splitPos
+    if splitPos >= 0 then sign ++ ints ++ "." ++ decimals
+    else sign ++ show splitPos
 
 a = BigDecimal 1234 2
 b = BigDecimal 5678 3
