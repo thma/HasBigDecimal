@@ -2,6 +2,7 @@ module Data.BigDecimal where
 
 import Data.List
 import Data.Maybe (fromMaybe)
+import GHC.Real (Ratio((:%))) -- we only need the Ratio Constructor
 
 data RoundingMode =
     ROUND_UP           -- Rounding mode to round away from zero.
@@ -13,35 +14,40 @@ data RoundingMode =
   | ROUND_HALF_EVEN    -- Rounding mode to round towards the "nearest neighbor" unless both neighbors are equidistant, in which case, round towards the even neighbor.
   | ROUND_UNNECESSARY  -- Rounding mode to assert that the requested operation has an exact result, hence no rounding is necessary.
 
-data BigDecimal = BigDecimal Integer Integer deriving (Show, Read, Eq)
+data BigDecimal = BigDecimal Integer Integer deriving (Show, Read)
 instance Num BigDecimal where
-    a + b         = plus $ matchScales (a, b)
-    a * b         = mul (a, b)
-    abs           = undefined
-    signum        = undefined
-    fromInteger i = BigDecimal i 0
-    negate (BigDecimal num digits) = BigDecimal (-num) digits
+    a + b                   = plus $ matchScales (a, b)
+    a * b                   = mul (a, b)
+    abs (BigDecimal v s)    = BigDecimal (abs v) s
+    signum (BigDecimal v _) = BigDecimal (signum v) 0
+    fromInteger i           = BigDecimal i 0
+    negate (BigDecimal v s) = BigDecimal (-v) s
+
+instance Eq BigDecimal where
+    a == b = let (ma, mb) = matchScales (a, b)
+             in getValue ma == getValue mb
 
 instance Fractional BigDecimal where
-    a / b = divide (matchScales (a ,b)) ROUND_UP Nothing
-    fromRational = undefined
+    -- default division rounds up and does not limit precision
+    a / b                 = divide (matchScales (a ,b)) ROUND_UP Nothing
+    fromRational (x :% y) = BigDecimal x 0 / BigDecimal y 0
 
 -- | add two BigDecimals with same precision
 plus :: (BigDecimal, BigDecimal) -> BigDecimal
-plus (BigDecimal integerA scaleA, BigDecimal integerB scaleB)
-    = BigDecimal (integerA + integerB) scaleA
+plus (BigDecimal valA scaleA, BigDecimal valB scaleB)
+    = BigDecimal (valA + valB) scaleA
 
 -- | multiply two BigDecimals    
 mul :: (BigDecimal, BigDecimal) -> BigDecimal
-mul (BigDecimal integerA scaleA, BigDecimal integerB scaleB)
-    = BigDecimal (integerA * integerB) (scaleA + scaleB)
+mul (BigDecimal valA scaleA, BigDecimal valB scaleB)
+    = BigDecimal (valA * valB) (scaleA + scaleB)
 
--- | divide two BigDecimals with applying the RoundingMode and the specified Precicion
+-- | divide two BigDecimals with applying the RoundingMode and the specified precision
 -- | if Nothing if given as precision the maximum possible precision is used
 divide :: (BigDecimal, BigDecimal) -> RoundingMode -> Maybe Integer -> BigDecimal
 divide (a, b) rMode prefScale =
     let
-       (BigDecimal numA digitsA, BigDecimal numB digitsB) = matchScales (a, b)
+       (BigDecimal numA _, BigDecimal numB _) = matchScales (a, b)
        maxPrecision =
           fromMaybe
             (precision numA + round (fromInteger (precision numB) * 10 / 3))
@@ -60,7 +66,7 @@ divUsing rMode a b =
         ROUND_UP          -> if rem >  0 then quot + 1 else quot
         ROUND_HALF_UP     -> if delta >= 0 then quot + 1 else quot
         ROUND_HALF_DOWN   -> if delta <= 0 then quot else quot + 1
-        _                 -> quot --round (fromInteger a / fromInteger b)
+        _                 -> quot
 
 -- | match the scales of a tuple of BigDecimals
 matchScales :: (BigDecimal, BigDecimal) -> (BigDecimal, BigDecimal)
@@ -69,7 +75,7 @@ matchScales (a@(BigDecimal integerA scaleA), b@(BigDecimal integerB scaleB))
     | scaleA > scaleB = (a, BigDecimal (integerB * 10^(scaleA-scaleB)) scaleA)
     | otherwise       = (a, b)
 
---
+-- returns the number of digits of an Integer
 precision :: Integer -> Integer
 precision 0    = 1
 precision val  = 1 + floor (logBase 10 $ abs $ fromInteger val)
@@ -83,6 +89,7 @@ shrink prefScale bd@(BigDecimal val scale)  =
        then shrink prefScale $ BigDecimal v (scale-1)
        else bd
 
+-- read a BigDecimal from a human readable decimal notation
 toBD :: String -> BigDecimal
 toBD s =
   let maybeIndex = elemIndex '.' s
@@ -91,6 +98,7 @@ toBD s =
         Nothing -> BigDecimal intValue 0
         Just i  -> BigDecimal intValue $ toInteger (length s - i - 1)
 
+-- returns a readable String representation
 toString :: BigDecimal -> String
 toString bd@(BigDecimal intValue scale) =
   let s                = show $ abs intValue
@@ -99,28 +107,27 @@ toString bd@(BigDecimal intValue scale) =
                          else s
       splitPos         = length filled - fromInteger scale
       (ints, decimals) = splitAt splitPos filled
-      sign             = if (intValue < 0) then "-" else ""
+      sign             = if intValue < 0 then "-" else ""
   in
     if splitPos >= 0 then sign ++ ints ++ "." ++ decimals
     else sign ++ show splitPos
 
+-- gets the scale part of a BigDecimal
 getScale :: BigDecimal -> Integer
 getScale (BigDecimal _ s) = s
 
+-- get the unscaled value of a BigDecimal
 getValue :: BigDecimal -> Integer
 getValue (BigDecimal v _) = v
 
-zero = (BigDecimal 0 0)
+-- 0
+zero :: BigDecimal
+zero = BigDecimal 0 0
 
-a = BigDecimal 1234 2
-b = BigDecimal 5678 3
-ad = 12.34
-bd = 5.678
-
+-- 1
+one :: BigDecimal
 one = BigDecimal 1 0
-three = BigDecimal 3 0
-four = BigDecimal 4 0
-five = BigDecimal 5 0
-nine = BigDecimal 9 0
-seven = toBD "7"
-thirtyTwo = BigDecimal 32 0
+
+-- 10
+ten :: BigDecimal
+ten = BigDecimal 10 0
