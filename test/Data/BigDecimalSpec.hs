@@ -83,3 +83,10 @@ spec = do
     it "negates for input < 0" $
       property $ \bd -> abs bd === if getValue bd < 0 then negate bd else bd
 
+  describe "signum" $ do
+    it "determines the signature a BigDecimal" $
+      signum (BigDecimal (-12) 4)  `shouldBe` -one
+    it "returns one if input > 0, zero if input == 0 and -one if input < 0" $
+      property $ \ai as -> signum (BigDecimal ai as) === if ai > 0 then one else if ai == 0 then zero else -one
+    it "is based on signum for Integers" $
+      property $ \ai as -> signum (BigDecimal ai as) === BigDecimal (signum ai) 0
