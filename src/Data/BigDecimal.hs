@@ -14,9 +14,8 @@ data RoundingMode =
   | ROUND_UNNECESSARY  -- Rounding mode to assert that the requested operation has an exact result, hence no rounding is necessary.
 
 data BigDecimal = BigDecimal Integer Integer deriving (Show, Read, Eq)
-
 instance Num BigDecimal where
-    a + b         = plus $ matchDigits (a, b)
+    a + b         = plus $ matchScales (a, b)
     a * b         = mul (a, b)
     abs           = undefined
     signum        = undefined
@@ -24,7 +23,7 @@ instance Num BigDecimal where
     negate (BigDecimal num digits) = BigDecimal (-num) digits
 
 instance Fractional BigDecimal where
-    a / b = divide (matchDigits (a ,b)) ROUND_UP Nothing
+    a / b = divide (matchScales (a ,b)) ROUND_UP Nothing
     fromRational = undefined
 
 -- | add two BigDecimals with same precision
@@ -42,7 +41,7 @@ mul (BigDecimal integerA scaleA, BigDecimal integerB scaleB)
 divide :: (BigDecimal, BigDecimal) -> RoundingMode -> Maybe Integer -> BigDecimal
 divide (a, b) rMode prefScale =
     let
-       (BigDecimal numA digitsA, BigDecimal numB digitsB) = matchDigits (a, b)
+       (BigDecimal numA digitsA, BigDecimal numB digitsB) = matchScales (a, b)
        maxPrecision =
           fromMaybe
             (precision numA + round (fromInteger (precision numB) * 10 / 3))
@@ -64,8 +63,8 @@ divUsing rMode a b =
         _                 -> quot --round (fromInteger a / fromInteger b)
 
 -- | match the scales of a tuple of BigDecimals
-matchDigits :: (BigDecimal, BigDecimal) -> (BigDecimal, BigDecimal)
-matchDigits (a@(BigDecimal integerA scaleA), b@(BigDecimal integerB scaleB))
+matchScales :: (BigDecimal, BigDecimal) -> (BigDecimal, BigDecimal)
+matchScales (a@(BigDecimal integerA scaleA), b@(BigDecimal integerB scaleB))
     | scaleA < scaleB = (BigDecimal (integerA * 10^(scaleB-scaleA)) scaleB, b)
     | scaleA > scaleB = (a, BigDecimal (integerB * 10^(scaleA-scaleB)) scaleA)
     | otherwise       = (a, b)
@@ -105,6 +104,11 @@ toString bd@(BigDecimal intValue scale) =
     if splitPos >= 0 then sign ++ ints ++ "." ++ decimals
     else sign ++ show splitPos
 
+getScale :: BigDecimal -> Integer
+getScale (BigDecimal _ s) = s
+
+getValue :: BigDecimal -> Integer
+getValue (BigDecimal v _) = v
 
 zero = (BigDecimal 0 0)
 
