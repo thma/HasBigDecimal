@@ -14,6 +14,7 @@ data RoundingMode =
   | ROUND_UNNECESSARY  -- Rounding mode to assert that the requested operation has an exact result, hence no rounding is necessary.
 
 data BigDecimal = BigDecimal Integer Integer deriving (Show, Read, Eq)
+
 instance Num BigDecimal where
     a + b         = plus $ matchDigits (a, b)
     a * b         = mul (a, b)
@@ -103,6 +104,9 @@ toString bd@(BigDecimal intValue scale) =
   in
     if splitPos >= 0 then sign ++ ints ++ "." ++ decimals
     else sign ++ show splitPos
+
+
+zero = (BigDecimal 0 0)
 
 a = BigDecimal 1234 2
 b = BigDecimal 5678 3
