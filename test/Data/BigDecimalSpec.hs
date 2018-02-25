@@ -6,6 +6,8 @@ import Test.Hspec
 import Test.QuickCheck --hiding (shrink)
 import Test.Hspec.QuickCheck (modifyMaxSize, modifyMaxSuccess)
 import Data.BigDecimal
+import GHC.Real (Ratio((:%))) -- we only need the Ratio Constructor
+import Control.Exception (evaluate)
 
 -- `main` is here so that this module can be run from GHCi on its own.  It is
 -- not needed for automatic spec discovery.
@@ -19,7 +21,6 @@ instance Arbitrary BigDecimal where
       unscaledValue <- arbitrary
       NonNegative scale <- arbitrary
       return $ BigDecimal unscaledValue scale
-
 
 spec :: Spec
 spec = do
@@ -90,3 +91,35 @@ spec = do
       property $ \ai as -> signum (BigDecimal ai as) === if ai > 0 then one else if ai == 0 then zero else -one
     it "is based on signum for Integers" $
       property $ \ai as -> signum (BigDecimal ai as) === BigDecimal (signum ai) 0
+
+  describe "fromInteger" $ do
+    it "constructs a BigDecimal from an Integer" $
+      fromInteger 1234  `shouldBe` BigDecimal 1234 0
+    it "works for any Integer" $
+      property $ \i -> fromInteger i === BigDecimal i 0
+
+  describe "negate" $ do
+    it "negates a BigDecimal" $
+      negate (BigDecimal 1234 1)  `shouldBe` -BigDecimal 1234 1
+    it "works for any BigDecimal" $
+      property $ \bd -> negate bd === (-bd :: BigDecimal)
+    it "is its own inverse" $
+      property $ \bd -> negate (negate bd) === (bd :: BigDecimal)
+
+  describe "(/)" $ do
+    it "divides two BigDecimals" $
+      BigDecimal 16 1 / BigDecimal 4 1 `shouldBe` BigDecimal 4 0
+    it "yields x for x/1 for any x" $
+      property $ \x -> x/1 === (x :: BigDecimal)
+    it "yields 1 for x/x any non-zero x" $
+      property $ \x -> one === if x == zero then one else x / x
+    it "throws an Arithmetic exception when dividing by 0" $
+      property $ \bd -> evaluate (bd / zero) `shouldThrow` anyArithException
+    it "yields y for (x*y)/x for any nonzero x" $
+      property $ \x y -> y === if x == zero then y else (x*y)/x
+
+  describe "fromRational" $ do
+    it "constructs a BigDecimal from a Ratio" $
+      fromRational (1 :% 32) `shouldBe` one / BigDecimal 32 0
+    it "works for any non-zero divisors" $
+      property $ \x y -> if y == 0 then 1 ===1 else fromRational (x :% y) === BigDecimal x 0 / BigDecimal y 0
