@@ -120,7 +120,7 @@ spec = do
     it "yields x for x/1 for any x" $
       property $ \x -> x/1 === (x :: BigDecimal)
     it "yields 1 for x/x any non-zero x" $
-      property $ \x -> one === if x == zero then one else x / x
+      property $ \x -> x / x  === if x == zero then NotANumber else x / x
     it "throws an Arithmetic exception when dividing by 0" $
       property $ \bd -> evaluate (bd / zero) `shouldThrow` anyArithException
     it "yields y for (x*y)/x for any nonzero x" $

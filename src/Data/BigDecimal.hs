@@ -14,7 +14,10 @@ data RoundingMode =
   | ROUND_HALF_EVEN    -- Rounding mode to round towards the "nearest neighbor" unless both neighbors are equidistant, in which case, round towards the even neighbor.
   | ROUND_UNNECESSARY  -- Rounding mode to assert that the requested operation has an exact result, hence no rounding is necessary.
 
-data BigDecimal = BigDecimal Integer Integer deriving (Show, Read)
+data BigDecimal = BigDecimal Integer Integer
+                | Infinity
+                | NotANumber deriving (Show, Read)
+
 instance Num BigDecimal where
     a + b                   = plus $ matchScales (a, b)
     a * b                   = mul (a, b)
@@ -31,6 +34,9 @@ instance Fractional BigDecimal where
     -- default division rounds up and does not limit precision
     a / b                 = divide (matchScales (a ,b)) ROUND_UP Nothing
     fromRational (x :% y) = BigDecimal x 0 / BigDecimal y 0
+--      | y == 0 && x== 0 = NotANumber
+--      | y == 0          = Infinity
+--      | otherwise       = BigDecimal x 0 / BigDecimal y 0
 
 -- | add two BigDecimals with same precision
 plus :: (BigDecimal, BigDecimal) -> BigDecimal
@@ -45,17 +51,20 @@ mul (BigDecimal valA scaleA, BigDecimal valB scaleB)
 -- | divide two BigDecimals with applying the RoundingMode and the specified precision
 -- | if Nothing if given as precision the maximum possible precision is used
 divide :: (BigDecimal, BigDecimal) -> RoundingMode -> Maybe Integer -> BigDecimal
-divide (a, b) rMode prefScale =
-    let
-       (BigDecimal numA _, BigDecimal numB _) = matchScales (a, b)
-       maxPrecision =
-          fromMaybe
-            (precision numA + round (fromInteger (precision numB) * 10 / 3))
-            prefScale
-    in shrink maxPrecision
-      (BigDecimal
-        (divUsing rMode (numA * (10::Integer)^maxPrecision) numB)
-        maxPrecision)
+divide (a, b) rMode prefScale
+  | a == 0 && b == 0 = NotANumber
+  | b == 0           = Infinity
+  | otherwise        =
+        let
+           (BigDecimal numA _, BigDecimal numB _) = matchScales (a, b)
+           maxPrecision =
+              fromMaybe
+                (precision numA + round (fromInteger (precision numB) * 10 / 3))
+                prefScale
+        in shrink maxPrecision
+          (BigDecimal
+            (divUsing rMode (numA * (10::Integer)^maxPrecision) numB)
+            maxPrecision)
 
 divUsing :: RoundingMode -> Integer -> Integer -> Integer
 divUsing rMode a b =
