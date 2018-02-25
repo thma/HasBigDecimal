@@ -22,6 +22,12 @@ instance Arbitrary BigDecimal where
       NonNegative scale <- arbitrary
       return $ BigDecimal unscaledValue scale
 
+--myit :: (HasCallStack, Example a1) => String -> a1 -> SpecWith (Arg a1)
+--myit = modifyMaxSuccess (const 1000) it
+
+two = BigDecimal 2 0
+three = BigDecimal 3 0
+
 spec :: Spec
 spec = do
   describe "toBD" $ do
@@ -103,6 +109,8 @@ spec = do
       negate (BigDecimal 1234 1)  `shouldBe` -BigDecimal 1234 1
     it "works for any BigDecimal" $
       property $ \bd -> negate bd === (-bd :: BigDecimal)
+    it "is the same as *(-1)" $
+          property $ \bd -> negate bd === (-one * bd :: BigDecimal)
     it "is its own inverse" $
       property $ \bd -> negate (negate bd) === (bd :: BigDecimal)
 
@@ -123,3 +131,9 @@ spec = do
       fromRational (1 :% 32) `shouldBe` one / BigDecimal 32 0
     it "works for any non-zero divisors" $
       property $ \x y -> if y == 0 then 1 ===1 else fromRational (x :% y) === BigDecimal x 0 / BigDecimal y 0
+
+  describe "divide" $ do
+    it "divides BigDecimals applying RoundingMode and precision" $
+      divide (two, three) ROUND_HALF_UP (Just 9) `shouldBe` toBD "0.666666667"
+    it "does not round up when using ROUND_DOWN" $
+      divide (two, three) ROUND_DOWN (Just 9) `shouldBe` toBD "0.666666666"
