@@ -84,9 +84,8 @@ precision val  = 1 + floor (logBase 10 $ abs $ fromInteger val)
 -- removes trailing zeros from a BigDecimals intValue by decreasing the scale
 shrink :: Integer -> BigDecimal -> BigDecimal
 shrink prefScale bd@(BigDecimal val scale)  =
-  let r = mod val 10
-      v = div val 10
-  in if r == 0 && 0 <= prefScale && prefScale < scale
+  let (v, r) = quotRem val 10
+  in if r == 0 && 0 < prefScale && prefScale < scale
        then shrink prefScale $ BigDecimal v (scale-1)
        else bd
 
@@ -109,9 +108,9 @@ toString bd@(BigDecimal intValue scale) =
       splitPos         = length filled - fromInteger scale
       (ints, decimals) = splitAt splitPos filled
       sign             = if intValue < 0 then "-" else ""
-  in
-    if splitPos >= 0 then sign ++ ints ++ "." ++ decimals
-    else sign ++ show splitPos
+  in sign ++
+        if length decimals > 0 then ints ++ "." ++ decimals
+        else ints
 
 -- gets the scale part of a BigDecimal
 getScale :: BigDecimal -> Integer

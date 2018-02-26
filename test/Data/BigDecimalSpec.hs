@@ -3,7 +3,7 @@ module Data.BigDecimalSpec
 where
 
 import Test.Hspec
-import Test.QuickCheck --hiding (shrink)
+import Test.QuickCheck hiding (shrink)
 import Test.Hspec.QuickCheck (modifyMaxSize, modifyMaxSuccess)
 import Data.BigDecimal
 import GHC.Real (Ratio((:%))) -- we only need the Ratio Constructor
@@ -39,6 +39,10 @@ spec = do
   describe "toString" $ do
     it "converts BigDecimals to string" $
       toString (BigDecimal (-145123) 3) `shouldBe` "-145.123"
+    it "adds leading 0s if required" $
+          toString (BigDecimal (-14) 10) `shouldBe` "-0.0000000014"
+    it "can handle integer values" $
+          toString ten `shouldBe` "10"
     it "is inverse of toBD" $
       property $ \bd -> (toString . toBD . toString) bd === toString (bd :: BigDecimal)
 
@@ -141,5 +145,27 @@ spec = do
   describe "divide" $ do
     it "divides BigDecimals applying RoundingMode and precision" $
       divide (two, three) ROUND_HALF_UP (Just 9) `shouldBe` toBD "0.666666667"
-    it "does not round up when using ROUND_DOWN" $
+    it "always rounds down when using ROUND_DOWN" $
       divide (two, three) ROUND_DOWN (Just 9) `shouldBe` toBD "0.666666666"
+    it "always rounds up when using ROUND_UP" $
+      divide (one, toBD "9") ROUND_UP (Just 3) `shouldBe` toBD "0.112"
+    it "rounds down if next decimal would be <= 5 when using ROUND_HALF_DOWN" $
+      divide (toBD "5", toBD "9") ROUND_HALF_DOWN (Just 4) `shouldBe` toBD "0.5555"
+    it "rounds up if next decimal would be >= 5 when using ROUND_HALF_UP" $
+      divide (toBD "5", toBD "9") ROUND_HALF_UP (Just 4) `shouldBe` toBD "0.5556"
+    it "throws an exception when ROUND_UNNECESSARY is used and a non-terminating decimal expansion is detected" $
+      evaluate (divide (toBD "5", toBD "9") ROUND_UNNECESSARY Nothing) `shouldThrow` anyException
+    it "gives a pecise value when using ROUND_UNNECESSARY and no max precision" $
+      divide (1, toBD "32") ROUND_UNNECESSARY Nothing `shouldBe` toBD "0.03125"
+    it "gives a pecise value when using ROUND_UNNECESSARY and a sufficient precision" $
+      divide (1, toBD "32") ROUND_UNNECESSARY (Just 5) `shouldBe` toBD "0.03125"
+    it "gives a pecise value when using ROUND_UNNECESSARY and a to small precision" $
+      evaluate (divide (1, toBD "32") ROUND_UNNECESSARY (Just 4)) `shouldThrow` anyException
+
+  describe "shrink" $ do
+    it "removes trailing zeros while taking care of the scale" $
+      shrink 0 (BigDecimal 1000 3) `shouldBe` BigDecimal 1 0
+    it "does not eliminate more 0s than requested" $
+      shrink 2 (BigDecimal 1000 3) `shouldBe` BigDecimal 100 2
+    it "does not eliminate more 0s than possible" $
+      shrink 0 (BigDecimal 1230 3) `shouldBe` BigDecimal 123 2
