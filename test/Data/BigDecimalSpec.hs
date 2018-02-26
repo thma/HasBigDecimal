@@ -120,11 +120,17 @@ spec = do
     it "yields x for x/1 for any x" $
       property $ \x -> x/1 === (x :: BigDecimal)
     it "yields 1 for x/x any non-zero x" $
-      property $ \x -> x / x  === if x == zero then NotANumber else x / x
+      property $ \x -> if x /= zero then x / x === one else 1===1
     it "throws an Arithmetic exception when dividing by 0" $
       property $ \bd -> evaluate (bd / zero) `shouldThrow` anyArithException
     it "yields y for (x*y)/x for any nonzero x" $
       property $ \x y -> y === if x == zero then y else (x*y)/x
+    it "rounds up if next decimal would be > 5" $
+      toBD "6" / toBD "9" `shouldBe` toBD "0.6667"
+    it "rounds up if next decimal would be = 5" $
+      toBD "5" / toBD "9" `shouldBe` toBD "0.5556"
+    it "rounds down if next decimal would be < 5" $
+      toBD "4" / toBD "9" `shouldBe` toBD "0.4444"
 
   describe "fromRational" $ do
     it "constructs a BigDecimal from a Ratio" $
