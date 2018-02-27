@@ -153,14 +153,23 @@ spec = do
       divide (toBD "5", toBD "9") ROUND_HALF_DOWN (Just 4) `shouldBe` toBD "0.5555"
     it "rounds up if next decimal would be >= 5 when using ROUND_HALF_UP" $
       divide (toBD "5", toBD "9") ROUND_HALF_UP (Just 4) `shouldBe` toBD "0.5556"
-    it "throws an exception when ROUND_UNNECESSARY is used and a non-terminating decimal expansion is detected" $
-      evaluate (divide (toBD "5", toBD "9") ROUND_UNNECESSARY Nothing) `shouldThrow` anyException
-    it "gives a pecise value when using ROUND_UNNECESSARY and no max precision" $
-      divide (1, toBD "32") ROUND_UNNECESSARY Nothing `shouldBe` toBD "0.03125"
-    it "gives a pecise value when using ROUND_UNNECESSARY and a sufficient precision" $
-      divide (1, toBD "32") ROUND_UNNECESSARY (Just 5) `shouldBe` toBD "0.03125"
-    it "gives a pecise value when using ROUND_UNNECESSARY and a to small precision" $
-      evaluate (divide (1, toBD "32") ROUND_UNNECESSARY (Just 4)) `shouldThrow` anyException
+
+    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
+      divide (toBD "5", toBD "9") ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "0.5556"
+
+
+
+
+    it "throws an exception when PRECISE is used and a non-terminating decimal expansion is detected" $
+      evaluate (divide (toBD "5", toBD "9") PRECISE Nothing) `shouldThrow` anyException
+    it "gives a pecise value when using PRECISE and no max precision" $
+      divide (1, toBD "32") PRECISE Nothing `shouldBe` toBD "0.03125"
+    it "gives a pecise value when using PRECISE and a sufficient precision" $
+      divide (1, toBD "32") PRECISE (Just 5) `shouldBe` toBD "0.03125"
+    it "gives a pecise value when using PRECISE and a to small precision" $
+      evaluate (divide (1, toBD "32") PRECISE (Just 4)) `shouldThrow` anyException
+
+
 
   describe "shrink" $ do
     it "removes trailing zeros while taking care of the scale" $

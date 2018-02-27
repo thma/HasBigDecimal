@@ -11,8 +11,8 @@ data RoundingMode =
   | ROUND_FLOOR        -- Rounding mode to round towards negative infinity.
   | ROUND_HALF_UP      -- Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, in which case round up.
   | ROUND_HALF_DOWN    -- Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, in which case round down.
-  | ROUND_HALF_EVEN    -- Rounding mode to round towards the "nearest neighbor" unless both neighbors are equidistant, in which case, round towards the even neighbor.
-  | ROUND_UNNECESSARY  -- Rounding mode to assert that the requested operation has an exact result, hence no rounding is necessary.
+  | ROUND_HALF_EVEN    -- Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, in which case, round towards the even neighbor.
+  | PRECISE            -- Rounding mode to assert that the requested operation has an exact result, hence no rounding is applied.
 
 data BigDecimal = BigDecimal Integer Integer deriving (Show, Read)
 
@@ -63,11 +63,15 @@ divUsing rMode a b =
   let (quot, rem) = quotRem a b
       delta = (10 * rem `div` b) - 5
   in case rMode of
-        ROUND_UNNECESSARY -> if rem == 0 then quot else error "non-terminating decimal expansion"
+        PRECISE -> if rem == 0 then quot else error "non-terminating decimal expansion"
         ROUND_UP          -> if rem >  0 then quot + 1 else quot
+        ROUND_CEILING     -> if rem >  0 then quot + 1 else quot
         ROUND_HALF_UP     -> if delta >= 0 then quot + 1 else quot
         ROUND_HALF_DOWN   -> if delta <= 0 then quot else quot + 1
-        _                 -> quot
+        ROUND_DOWN        -> quot
+        ROUND_FLOOR       -> quot
+        ROUND_HALF_EVEN   -> if delta > 0 then quot +1
+                             else if delta == 0 && odd quot then quot + 1 else quot
 
 -- | match the scales of a tuple of BigDecimals
 matchScales :: (BigDecimal, BigDecimal) -> (BigDecimal, BigDecimal)
