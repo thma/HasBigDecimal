@@ -156,8 +156,12 @@ spec = do
 
     it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
       divide (toBD "5", toBD "9") ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "0.5556"
-
-
+    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
+      divide (toBD "1", toBD "8") ROUND_HALF_EVEN (Just 2) `shouldBe` toBD "0.12"
+    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
+      divide (toBD "15", toBD "100") ROUND_HALF_EVEN (Just 1) `shouldBe` toBD "0.2"
+    it "rounds up if next decimal would be > 5 when using ROUND_HALF_EVEN" $
+      divide (toBD "2", toBD "3") ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "0.6667"
 
 
     it "throws an exception when PRECISE is used and a non-terminating decimal expansion is detected" $
