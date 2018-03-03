@@ -61,17 +61,17 @@ divide (a, b) rMode prefScale =
 divUsing :: RoundingMode -> Integer -> Integer -> Integer
 divUsing rMode a b =
   let (quot, rem) = quotRem a b
-      delta = (10 * rem `div` b) - 5
+      delta = (10 * abs rem `div` b) - 5
   in case rMode of
         PRECISE -> if rem == 0 then quot else error "non-terminating decimal expansion"
-        ROUND_UP          -> if rem >  0 then quot + 1 else quot
+        ROUND_UP          -> if abs rem >  0 then quot + signum rem else quot
         ROUND_CEILING     -> if rem >  0 then quot + 1 else quot
-        ROUND_HALF_UP     -> if delta >= 0 then quot + 1 else quot
-        ROUND_HALF_DOWN   -> if delta <= 0 then quot else quot + 1
+        ROUND_HALF_UP     -> if delta >= 0 then quot + signum rem else quot
+        ROUND_HALF_DOWN   -> if delta <= 0 then quot else quot + signum rem
         ROUND_DOWN        -> quot
         ROUND_FLOOR       -> quot
-        ROUND_HALF_EVEN   -> if delta > 0 then quot +1
-                             else if delta == 0 && odd quot then quot + 1 else quot
+        ROUND_HALF_EVEN   -> if delta > 0 then quot + signum rem
+                             else if delta == 0 && odd quot then quot + signum rem else quot
 
 -- | match the scales of a tuple of BigDecimals
 matchScales :: (BigDecimal, BigDecimal) -> (BigDecimal, BigDecimal)
