@@ -123,15 +123,3 @@ getScale (BigDecimal _ s) = s
 -- get the unscaled value of a BigDecimal
 getValue :: BigDecimal -> Integer
 getValue (BigDecimal v _) = v
-
--- 0
-zero :: BigDecimal
-zero = BigDecimal 0 0
-
--- 1
-one :: BigDecimal
-one = BigDecimal 1 0
-
--- 10
-ten :: BigDecimal
-ten = BigDecimal 10 0

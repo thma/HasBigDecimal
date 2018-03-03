@@ -39,7 +39,7 @@ spec = do
     it "adds leading 0s if required" $
           toString (BigDecimal (-14) 10) `shouldBe` "-0.0000000014"
     it "can handle integer values" $
-          toString ten `shouldBe` "10"
+          toString 10 `shouldBe` "10"
     it "is inverse of toBD" $
       property $ \bd -> (toString . toBD . toString) bd === toString (bd :: BigDecimal)
 
@@ -59,9 +59,9 @@ spec = do
     it "adds two BigDecimals" $
       BigDecimal 73 1 + BigDecimal 270 2 `shouldBe` BigDecimal 1000 2
     modifyMaxSuccess (const 1000) $ it "has 0 as neutral element" $
-      property $ \bd -> bd + zero === (bd :: BigDecimal)
+      property $ \bd -> bd + 0 === (bd :: BigDecimal)
     it "adds x to (-x) yielding 0" $
-      property $ \bd -> bd + (-bd) === zero
+      property $ \bd -> bd + (-bd) === (0 :: BigDecimal)
     it "uses the max scale of the summands" $
       property $ \ai as bi bs -> max as bs === getScale (BigDecimal ai as + BigDecimal bi bs)
     it "uses Integer addition when summands have same scale" $
@@ -75,7 +75,7 @@ spec = do
     it "has 1 as neutral element" $
       property $ \bd -> bd * 1 === (bd :: BigDecimal)
     it "has 0 as zero element" $
-      property $ \bd -> bd * zero === zero
+      property $ \bd -> bd * 0 === (0 :: BigDecimal)
     it "Uses Integer multiplication" $
       property $ \ai as bi -> BigDecimal ai as * BigDecimal bi 0 === BigDecimal (ai*bi) as
     it "adds the scales of the multiplicands" $
@@ -95,13 +95,13 @@ spec = do
     it "determines the signature a BigDecimal" $
       signum (BigDecimal (-12) 4)  `shouldBe` -1
     it "returns 1 if input > 0, zero if input == 0 and -1 if input < 0" $
-      property $ \ai as -> signum (BigDecimal ai as) === if ai > 0 then 1 else if ai == 0 then zero else -1
+      property $ \ai as -> signum (BigDecimal ai as) === if ai > 0 then 1 else if ai == 0 then 0 else -1
     it "is based on signum for Integers" $
       property $ \ai as -> signum (BigDecimal ai as) === BigDecimal (signum ai) 0
 
   describe "fromInteger" $ do
     it "constructs a BigDecimal from an Integer" $
-      fromInteger 1234  `shouldBe` BigDecimal 1234 0
+      1234  `shouldBe` BigDecimal 1234 0
     it "works for any Integer" $
       property $ \i -> fromInteger i === BigDecimal i 0
 
@@ -121,11 +121,11 @@ spec = do
     it "yields x for x/1 for any x" $
       property $ \x -> x/1 === (x :: BigDecimal)
     it "yields 1 for x/x any non-zero x" $
-      property $ \x -> if x /= zero then x / x === 1 else 1===1
+      property $ \x -> if x /= (0 :: BigDecimal) then x / x === 1 else 1===1
     it "throws an Arithmetic exception when dividing by 0" $
-      property $ \bd -> evaluate (bd / zero) `shouldThrow` anyArithException
+      property $ \bd -> evaluate (bd / 0 :: BigDecimal) `shouldThrow` anyArithException
     it "yields y for (x*y)/x for any nonzero x" $
-      property $ \x y -> y === if x == zero then y else (x*y)/x
+      property $ \x y -> y === if x == (0 :: BigDecimal) then y else (x*y)/x
     it "rounds up if next decimal would be > 5" $
       6 / 9 `shouldBe` toBD "0.6667"
     it "rounds up if next decimal would be = 5" $
