@@ -3,6 +3,8 @@ module Data.BigDecimal where
 import           Data.List
 import           Data.Maybe (fromMaybe)
 import           GHC.Real   (Ratio ((:%)))
+import           Prelude    hiding (round)
+import qualified Prelude as P (round)
 
 data RoundingMode
   = ROUND_UP        -- Rounding mode to round away from zero.
@@ -49,7 +51,7 @@ mul (BigDecimal valA scaleA, BigDecimal valB scaleB) = BigDecimal (valA * valB) 
 divide :: (BigDecimal, BigDecimal) -> RoundingMode -> Maybe Integer -> BigDecimal
 divide (a, b) rMode prefScale =
   let (BigDecimal numA _, BigDecimal numB _) = matchScales (a, b)
-      maxPrecision = fromMaybe (precision numA + round (fromInteger (precision numB) * 10 / 3)) prefScale
+      maxPrecision = fromMaybe (precision numA + P.round (fromInteger (precision numB) * 10 / 3)) prefScale
   in shrink maxPrecision (BigDecimal (divUsing rMode (numA * (10 :: Integer) ^ maxPrecision) numB) maxPrecision)
 
 divUsing :: RoundingMode -> Integer -> Integer -> Integer
@@ -68,6 +70,14 @@ divUsing rMode a b =
          | delta > 0              -> quot + signum quot
          | delta == 0 && odd quot -> quot + signum quot
          | otherwise              -> quot
+
+
+-- round a BigDecimal to `n` digits applying rounding mode
+round :: BigDecimal -> RoundingMode -> Integer -> BigDecimal
+round bd@(BigDecimal val scale) rMode n
+  | n < 0 || n >= scale = bd
+  | otherwise           = BigDecimal (divUsing rMode val (10 ^ (scale-n))) n
+
 
 -- | match the scales of a tuple of BigDecimals
 matchScales :: (BigDecimal, BigDecimal) -> (BigDecimal, BigDecimal)
