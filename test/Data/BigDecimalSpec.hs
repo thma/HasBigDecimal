@@ -303,3 +303,7 @@ spec = do
       shrink 2 (BigDecimal 1000 3) `shouldBe` BigDecimal 100 2
     it "does not eliminate more 0s than possible" $
       shrink 0 (BigDecimal 1230 3) `shouldBe` BigDecimal 123 2
+
+  describe "matchScales" $
+    it "adjusts a pair of BigDecimals to use the same scale" $
+      property $ \x y -> let (x', y') = matchScales (x,y) in getScale x' === getScale y'
