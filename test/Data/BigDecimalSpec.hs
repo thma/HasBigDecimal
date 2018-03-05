@@ -139,7 +139,7 @@ spec = do
     it "works for any non-zero divisors" $
       property $ \x y -> if y == 0 then 1 ===1 else fromRational (x :% y) === BigDecimal x 0 / BigDecimal y 0
 
-  describe "divide" $ do
+  describe "divide +/+" $ do
     -- checking expresions >= 0
     it "divides BigDecimals applying RoundingMode and precision" $
       divide (2, 3) ROUND_HALF_UP (Just 9) `shouldBe` toBD "0.666666667"
@@ -171,13 +171,14 @@ spec = do
       divide (2, 3) ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "0.6667"
     it "throws an exception when PRECISE is used and a non-terminating decimal expansion is detected" $
       evaluate (divide (5, 9) PRECISE Nothing) `shouldThrow` anyException
-    it "gives a pecise value when using PRECISE and no max precision" $
+    it "gives a precise value when using PRECISE and no max precision" $
       divide (1, 32) PRECISE Nothing `shouldBe` toBD "0.03125"
-    it "gives a pecise value when using PRECISE and a sufficient precision" $
+    it "gives a precise value when using PRECISE and a sufficient precision" $
       divide (1, 32) PRECISE (Just 5) `shouldBe` toBD "0.03125"
-    it "gives a pecise value when using PRECISE and a to small precision" $
+    it "gives a precise value when using PRECISE and a to small precision" $
       evaluate (divide (1, 32) PRECISE (Just 4)) `shouldThrow` anyException
 
+  describe "divide -/+" $ do
     -- checking dividend < 0
     it "divides BigDecimals applying RoundingMode and precision" $
       divide (-2, 3) ROUND_HALF_UP (Just 9) `shouldBe` toBD "-0.666666667"
@@ -209,13 +210,14 @@ spec = do
       divide (-2, 3) ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "-0.6667"
     it "throws an exception when PRECISE is used and a non-terminating decimal expansion is detected" $
       evaluate (divide (-5, 9) PRECISE Nothing) `shouldThrow` anyException
-    it "gives a pecise value when using PRECISE and no max precision" $
+    it "gives a precise value when using PRECISE and no max precision" $
       divide (-1, 32) PRECISE Nothing `shouldBe` toBD "-0.03125"
-    it "gives a pecise value when using PRECISE and a sufficient precision" $
+    it "gives a precise value when using PRECISE and a sufficient precision" $
       divide (-1, 32) PRECISE (Just 5) `shouldBe` toBD "-0.03125"
-    it "gives a pecise value when using PRECISE and a to small precision" $
+    it "gives a precise value when using PRECISE and a to small precision" $
       evaluate (divide (-1, 32) PRECISE (Just 4)) `shouldThrow` anyException
 
+  describe "divide +/-" $ do
     -- checking divisor < 0
     it "divides BigDecimals applying RoundingMode and precision" $
       divide (2, -3) ROUND_HALF_UP (Just 9) `shouldBe` toBD "-0.666666667"
@@ -247,13 +249,51 @@ spec = do
       divide (2, -3) ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "-0.6667"
     it "throws an exception when PRECISE is used and a non-terminating decimal expansion is detected" $
       evaluate (divide (5, -9) PRECISE Nothing) `shouldThrow` anyException
-    it "gives a pecise value when using PRECISE and no max precision" $
+    it "gives a precise value when using PRECISE and no max precision" $
       divide (1, -32) PRECISE Nothing `shouldBe` toBD "-0.03125"
-    it "gives a pecise value when using PRECISE and a sufficient precision" $
+    it "gives a precise value when using PRECISE and a sufficient precision" $
       divide (1, -32) PRECISE (Just 5) `shouldBe` toBD "-0.03125"
-    it "gives a pecise value when using PRECISE and a to small precision" $
+    it "gives a precise value when using PRECISE and a to small precision" $
       evaluate (divide (1, -32) PRECISE (Just 4)) `shouldThrow` anyException
 
+  describe "divide -/-" $ do
+    -- checking dividend and divisor < 0
+    it "divides BigDecimals applying RoundingMode and precision" $
+      divide (-2, -3) ROUND_HALF_UP (Just 9) `shouldBe` toBD "0.666666667"
+    it "always rounds down when using ROUND_DOWN" $
+      divide (-2, -3) ROUND_DOWN (Just 9) `shouldBe` toBD "0.666666666"
+    it "always rounds towards -INF when using ROUND_FLOOR" $
+      divide (-2, -3) ROUND_FLOOR (Just 9) `shouldBe` toBD "0.666666666"
+    it "rounds up when using ROUND_UP when there is a remainder" $
+      divide (-1, -9) ROUND_UP (Just 3) `shouldBe` toBD "0.112"
+    it "does not round when there is no remainder when using ROUND_UP" $
+      divide (-14, -100) ROUND_UP (Just 2) `shouldBe` toBD "0.14"
+    it "rounds towards +INF when using ROUND_CEILING when there is a remainder" $
+      divide (-1, -9) ROUND_CEILING (Just 3) `shouldBe` toBD "0.112"
+    it "does not round when there is no remainder when using ROUND_UP" $
+      divide (-14, -100) ROUND_CEILING (Just 2) `shouldBe` toBD "0.14"
+    it "rounds down if next decimal would be <= 5 when using ROUND_HALF_DOWN" $
+      divide (-5, -9) ROUND_HALF_DOWN (Just 4) `shouldBe` toBD "0.5555"
+    it "rounds up if next decimal would be > 5 when using ROUND_HALF_DOWN" $
+      divide (-2, -3) ROUND_HALF_DOWN (Just 4) `shouldBe` toBD "0.6667"
+    it "rounds up if next decimal would be >= 5 when using ROUND_HALF_UP" $
+      divide (-5, -9) ROUND_HALF_UP (Just 4) `shouldBe` toBD "0.5556"
+    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
+      divide (-5, -9) ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "0.5556"
+    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
+      divide (-1, -8) ROUND_HALF_EVEN (Just 2) `shouldBe` toBD "0.12"
+    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
+      divide (-15, -100) ROUND_HALF_EVEN (Just 1) `shouldBe` toBD "0.2"
+    it "rounds up if next decimal would be > 5 when using ROUND_HALF_EVEN" $
+      divide (-2, -3) ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "0.6667"
+    it "throws an exception when PRECISE is used and a non-terminating decimal expansion is detected" $
+      evaluate (divide (-5, -9) PRECISE Nothing) `shouldThrow` anyException
+    it "gives a precise value when using PRECISE and no max precision" $
+      divide (-1, -32) PRECISE Nothing `shouldBe` toBD "0.03125"
+    it "gives a precise value when using PRECISE and a sufficient precision" $
+      divide (-1, -32) PRECISE (Just 5) `shouldBe` toBD "0.03125"
+    it "gives a precise value when using PRECISE and a to small precision" $
+      evaluate (divide (-1, -32) PRECISE (Just 4)) `shouldThrow` anyException
 
 
   describe "shrink" $ do
