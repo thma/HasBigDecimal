@@ -3,8 +3,6 @@ module Data.BigDecimal where
 import           Data.List
 import           Data.Maybe (fromMaybe)
 import           GHC.Real   (Ratio ((:%)))
-import           Prelude    hiding (round)
-import qualified Prelude as P (round)
 
 data RoundingMode
   = ROUND_UP        -- Rounding mode to round away from zero.
@@ -38,6 +36,18 @@ instance Fractional BigDecimal where
   a / b = divide (matchScales (a, b)) ROUND_HALF_UP Nothing
   fromRational (x :% y) = BigDecimal x 0 / BigDecimal y 0
 
+instance Real BigDecimal where
+  toRational (BigDecimal val scale) = toRational val * 10^^(-scale)
+
+instance Ord BigDecimal where
+  compare x y =
+    let (BigDecimal valX _, BigDecimal valY _) = matchScales (x, y)
+    in compare valX valY
+
+-- instance Floating BigDecimal where
+
+
+
 -- | add two BigDecimals with same precision
 plus :: (BigDecimal, BigDecimal) -> BigDecimal
 plus (BigDecimal valA scaleA, BigDecimal valB scaleB) = BigDecimal (valA + valB) scaleA
@@ -51,7 +61,7 @@ mul (BigDecimal valA scaleA, BigDecimal valB scaleB) = BigDecimal (valA * valB) 
 divide :: (BigDecimal, BigDecimal) -> RoundingMode -> Maybe Integer -> BigDecimal
 divide (a, b) rMode prefScale =
   let (BigDecimal numA _, BigDecimal numB _) = matchScales (a, b)
-      maxPrecision = fromMaybe (precision numA + P.round (fromInteger (precision numB) * 10 / 3)) prefScale
+      maxPrecision = fromMaybe (precision numA + round (fromInteger (precision numB) * 10 / 3)) prefScale
   in shrink maxPrecision (BigDecimal (divUsing rMode (numA * (10 :: Integer) ^ maxPrecision) numB) maxPrecision)
 
 divUsing :: RoundingMode -> Integer -> Integer -> Integer
@@ -73,8 +83,8 @@ divUsing rMode a b =
 
 
 -- round a BigDecimal to `n` digits applying rounding mode
-round :: BigDecimal -> RoundingMode -> Integer -> BigDecimal
-round bd@(BigDecimal val scale) rMode n
+roundBD :: BigDecimal -> RoundingMode -> Integer -> BigDecimal
+roundBD bd@(BigDecimal val scale) rMode n
   | n < 0 || n >= scale = bd
   | otherwise           = BigDecimal (divUsing rMode val (10 ^ (scale-n))) n
 
