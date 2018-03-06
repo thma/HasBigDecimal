@@ -5,18 +5,20 @@ import           Data.Maybe (fromMaybe)
 import           GHC.Real   (Ratio ((:%)))
 
 data RoundingMode
-  = ROUND_UP        -- Rounding mode to round away from zero.
-  | ROUND_DOWN      -- Rounding mode to round towards zero.
-  | ROUND_CEILING   -- Rounding mode to round towards positive infinity.
-  | ROUND_FLOOR     -- Rounding mode to round towards negative infinity.
-  | ROUND_HALF_UP   -- Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, in which case round up.
-  | ROUND_HALF_DOWN -- Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, in which case round down.
-  | ROUND_HALF_EVEN -- Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, in which case, round towards the even neighbor.
-  | PRECISE         -- Rounding mode to assert that the requested operation has an exact result, hence no rounding is applied.
+  = UP        -- Rounding mode to round away from zero.
+  | DOWN      -- Rounding mode to round towards zero.
+  | CEILING   -- Rounding mode to round towards positive infinity.
+  | FLOOR     -- Rounding mode to round towards negative infinity.
+  | HALF_UP   -- Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, in which case round up.
+  | HALF_DOWN -- Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, in which case round down.
+  | HALF_EVEN -- Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, in which case, round towards the even neighbor.
+  | PRECISE   -- Rounding mode to assert that the requested operation has an exact result, hence no rounding is applied.
 
 data BigDecimal =
   BigDecimal Integer Integer
   deriving (Show, Read)
+
+type MathContext = (RoundingMode, Maybe Integer)
 
 instance Num BigDecimal where
   a + b = plus $ matchScales (a, b)
@@ -33,7 +35,7 @@ instance Eq BigDecimal where
 
 instance Fractional BigDecimal where
   -- default division rounds up and does not limit precision
-  a / b = divide (matchScales (a, b)) ROUND_HALF_UP Nothing
+  a / b = divide (matchScales (a, b)) (HALF_UP, Nothing)
   fromRational (x :% y) = BigDecimal x 0 / BigDecimal y 0
 
 instance Real BigDecimal where
@@ -58,8 +60,8 @@ mul (BigDecimal valA scaleA, BigDecimal valB scaleB) = BigDecimal (valA * valB) 
 
 -- | divide two BigDecimals with applying the RoundingMode and the specified precision
 -- | if Nothing if given as precision the maximum possible precision is used
-divide :: (BigDecimal, BigDecimal) -> RoundingMode -> Maybe Integer -> BigDecimal
-divide (a, b) rMode prefScale =
+divide :: (BigDecimal, BigDecimal) -> MathContext -> BigDecimal
+divide (a, b) (rMode, prefScale) =
   let (BigDecimal numA _, BigDecimal numB _) = matchScales (a, b)
       maxPrecision = fromMaybe (precision numA + round (fromInteger (precision numB) * 10 / 3)) prefScale
   in shrink maxPrecision (BigDecimal (divUsing rMode (numA * (10 :: Integer) ^ maxPrecision) numB) maxPrecision)
@@ -70,13 +72,13 @@ divUsing rMode a b =
       delta = (10 * abs rem `div` abs b) - 5
   in case rMode of
        PRECISE -> if rem == 0 then quot else error "non-terminating decimal expansion"
-       ROUND_UP -> if abs rem > 0 then quot + signum quot else quot
-       ROUND_CEILING -> if abs rem > 0 && quot >= 0 then quot + 1 else quot
-       ROUND_HALF_UP -> if delta >= 0 then quot + signum quot else quot
-       ROUND_HALF_DOWN -> if delta <= 0 then quot else quot + signum quot
-       ROUND_DOWN -> quot
-       ROUND_FLOOR -> if quot >= 0 then quot else quot - 1
-       ROUND_HALF_EVEN
+       UP -> if abs rem > 0 then quot + signum quot else quot
+       CEILING -> if abs rem > 0 && quot >= 0 then quot + 1 else quot
+       HALF_UP -> if delta >= 0 then quot + signum quot else quot
+       HALF_DOWN -> if delta <= 0 then quot else quot + signum quot
+       DOWN -> quot
+       FLOOR -> if quot >= 0 then quot else quot - 1
+       HALF_EVEN
          | delta > 0              -> quot + signum quot
          | delta == 0 && odd quot -> quot + signum quot
          | otherwise              -> quot

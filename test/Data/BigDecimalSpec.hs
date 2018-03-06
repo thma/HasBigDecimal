@@ -142,158 +142,158 @@ spec = do
   describe "divide +/+" $ do
     -- checking expresions >= 0
     it "divides BigDecimals applying RoundingMode and precision" $
-      divide (2, 3) ROUND_HALF_UP (Just 9) `shouldBe` toBD "0.666666667"
-    it "always rounds down when using ROUND_DOWN" $
-      divide (2, 3) ROUND_DOWN (Just 9) `shouldBe` toBD "0.666666666"
-    it "always rounds down when using ROUND_FLOOR" $
-      divide (2, 3) ROUND_FLOOR (Just 9) `shouldBe` toBD "0.666666666"
-    it "rounds up when using ROUND_UP when there is a remainder" $
-      divide (1, 9) ROUND_UP (Just 3) `shouldBe` toBD "0.112"
-    it "does not round when there is no remainder when using ROUND_UP" $
-      divide (14, 100) ROUND_UP (Just 2) `shouldBe` toBD "0.14"
-    it "rounds up when using ROUND_UP when there is a remainder" $
-      divide (1, 9) ROUND_CEILING (Just 3) `shouldBe` toBD "0.112"
-    it "does not round when there is no remainder when using ROUND_UP" $
-      divide (14, 100) ROUND_CEILING (Just 2) `shouldBe` toBD "0.14"
-    it "rounds down if next decimal would be <= 5 when using ROUND_HALF_DOWN" $
-      divide (5, 9) ROUND_HALF_DOWN (Just 4) `shouldBe` toBD "0.5555"
-    it "rounds up if next decimal would be > 5 when using ROUND_HALF_DOWN" $
-      divide (2, 3) ROUND_HALF_DOWN (Just 4) `shouldBe` toBD "0.6667"
-    it "rounds up if next decimal would be >= 5 when using ROUND_HALF_UP" $
-      divide (5, 9) ROUND_HALF_UP (Just 4) `shouldBe` toBD "0.5556"
-    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
-      divide (5, 9) ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "0.5556"
-    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
-      divide (1, 8) ROUND_HALF_EVEN (Just 2) `shouldBe` toBD "0.12"
-    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
-      divide (15, 100) ROUND_HALF_EVEN (Just 1) `shouldBe` toBD "0.2"
-    it "rounds up if next decimal would be > 5 when using ROUND_HALF_EVEN" $
-      divide (2, 3) ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "0.6667"
+      divide (2, 3) (HALF_UP, Just 9) `shouldBe` toBD "0.666666667"
+    it "always rounds down when using DOWN" $
+      divide (2, 3) (DOWN, Just 9) `shouldBe` toBD "0.666666666"
+    it "always rounds down when using FLOOR" $
+      divide (2, 3) (FLOOR, Just 9) `shouldBe` toBD "0.666666666"
+    it "rounds up when using UP when there is a remainder" $
+      divide (1, 9) (UP, Just 3) `shouldBe` toBD "0.112"
+    it "does not round when there is no remainder when using UP" $
+      divide (14, 100) (UP, Just 2) `shouldBe` toBD "0.14"
+    it "rounds up when using UP when there is a remainder" $
+      divide (1, 9) (CEILING, Just 3) `shouldBe` toBD "0.112"
+    it "does not round when there is no remainder when using UP" $
+      divide (14, 100) (CEILING, Just 2) `shouldBe` toBD "0.14"
+    it "rounds down if next decimal would be <= 5 when using HALF_DOWN" $
+      divide (5, 9) (HALF_DOWN, Just 4) `shouldBe` toBD "0.5555"
+    it "rounds up if next decimal would be > 5 when using HALF_DOWN" $
+      divide (2, 3) (HALF_DOWN, Just 4) `shouldBe` toBD "0.6667"
+    it "rounds up if next decimal would be >= 5 when using HALF_UP" $
+      divide (5, 9) (HALF_UP, Just 4) `shouldBe` toBD "0.5556"
+    it "rounds to next even number if next decimal would be == 5 when using HALF_EVEN" $
+      divide (5, 9) (HALF_EVEN, Just 4) `shouldBe` toBD "0.5556"
+    it "rounds to next even number if next decimal would be == 5 when using HALF_EVEN" $
+      divide (1, 8) (HALF_EVEN, Just 2) `shouldBe` toBD "0.12"
+    it "rounds to next even number if next decimal would be == 5 when using HALF_EVEN" $
+      divide (15, 100) (HALF_EVEN, Just 1) `shouldBe` toBD "0.2"
+    it "rounds up if next decimal would be > 5 when using HALF_EVEN" $
+      divide (2, 3) (HALF_EVEN, Just 4) `shouldBe` toBD "0.6667"
     it "throws an exception when PRECISE is used and a non-terminating decimal expansion is detected" $
-      evaluate (divide (5, 9) PRECISE Nothing) `shouldThrow` anyException
+      evaluate (divide (5, 9) (PRECISE, Nothing)) `shouldThrow` anyException
     it "gives a precise value when using PRECISE and no max precision" $
-      divide (1, 32) PRECISE Nothing `shouldBe` toBD "0.03125"
+      divide (1, 32) (PRECISE, Nothing) `shouldBe` toBD "0.03125"
     it "gives a precise value when using PRECISE and a sufficient precision" $
-      divide (1, 32) PRECISE (Just 5) `shouldBe` toBD "0.03125"
+      divide (1, 32) (PRECISE, Just 5) `shouldBe` toBD "0.03125"
     it "gives a precise value when using PRECISE and a to small precision" $
-      evaluate (divide (1, 32) PRECISE (Just 4)) `shouldThrow` anyException
+      evaluate (divide (1, 32) (PRECISE, Just 4)) `shouldThrow` anyException
 
   describe "divide -/+" $ do
     -- checking dividend < 0
     it "divides BigDecimals applying RoundingMode and precision" $
-      divide (-2, 3) ROUND_HALF_UP (Just 9) `shouldBe` toBD "-0.666666667"
-    it "always rounds down when using ROUND_DOWN" $
-      divide (-2, 3) ROUND_DOWN (Just 9) `shouldBe` toBD "-0.666666666"
-    it "always rounds towards -INF when using ROUND_FLOOR" $
-      divide (-2, 3) ROUND_FLOOR (Just 9) `shouldBe` toBD "-0.666666667"
-    it "rounds up when using ROUND_UP when there is a remainder" $
-      divide (-1, 9) ROUND_UP (Just 3) `shouldBe` toBD "-0.112"
-    it "does not round when there is no remainder when using ROUND_UP" $
-      divide (-14, 100) ROUND_UP (Just 2) `shouldBe` toBD "-0.14"
-    it "rounds towards +INF when using ROUND_CEILING when there is a remainder" $
-      divide (-1, 9) ROUND_CEILING (Just 3) `shouldBe` toBD "-0.111"
-    it "does not round when there is no remainder when using ROUND_UP" $
-      divide (-14, 100) ROUND_CEILING (Just 2) `shouldBe` toBD "-0.14"
-    it "rounds down if next decimal would be <= 5 when using ROUND_HALF_DOWN" $
-      divide (-5, 9) ROUND_HALF_DOWN (Just 4) `shouldBe` toBD "-0.5555"
-    it "rounds up if next decimal would be > 5 when using ROUND_HALF_DOWN" $
-      divide (-2, 3) ROUND_HALF_DOWN (Just 4) `shouldBe` toBD "-0.6667"
-    it "rounds up if next decimal would be >= 5 when using ROUND_HALF_UP" $
-      divide (-5, 9) ROUND_HALF_UP (Just 4) `shouldBe` toBD "-0.5556"
-    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
-      divide (-5, 9) ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "-0.5556"
-    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
-      divide (-1, 8) ROUND_HALF_EVEN (Just 2) `shouldBe` toBD "-0.12"
-    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
-      divide (-15, 100) ROUND_HALF_EVEN (Just 1) `shouldBe` toBD "-0.2"
-    it "rounds up if next decimal would be > 5 when using ROUND_HALF_EVEN" $
-      divide (-2, 3) ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "-0.6667"
+      divide (-2, 3) (HALF_UP, Just 9) `shouldBe` toBD "-0.666666667"
+    it "always rounds down when using DOWN" $
+      divide (-2, 3) (DOWN, Just 9) `shouldBe` toBD "-0.666666666"
+    it "always rounds towards -INF when using FLOOR" $
+      divide (-2, 3) (FLOOR, Just 9) `shouldBe` toBD "-0.666666667"
+    it "rounds up when using UP when there is a remainder" $
+      divide (-1, 9) (UP, Just 3) `shouldBe` toBD "-0.112"
+    it "does not round when there is no remainder when using UP" $
+      divide (-14, 100) (UP, Just 2) `shouldBe` toBD "-0.14"
+    it "rounds towards +INF when using CEILING when there is a remainder" $
+      divide (-1, 9) (CEILING, Just 3) `shouldBe` toBD "-0.111"
+    it "does not round when there is no remainder when using UP" $
+      divide (-14, 100) (CEILING, Just 2) `shouldBe` toBD "-0.14"
+    it "rounds down if next decimal would be <= 5 when using HALF_DOWN" $
+      divide (-5, 9) (HALF_DOWN, Just 4) `shouldBe` toBD "-0.5555"
+    it "rounds up if next decimal would be > 5 when using HALF_DOWN" $
+      divide (-2, 3) (HALF_DOWN, Just 4) `shouldBe` toBD "-0.6667"
+    it "rounds up if next decimal would be >= 5 when using HALF_UP" $
+      divide (-5, 9) (HALF_UP, Just 4) `shouldBe` toBD "-0.5556"
+    it "rounds to next even number if next decimal would be == 5 when using HALF_EVEN" $
+      divide (-5, 9) (HALF_EVEN, Just 4) `shouldBe` toBD "-0.5556"
+    it "rounds to next even number if next decimal would be == 5 when using HALF_EVEN" $
+      divide (-1, 8) (HALF_EVEN, Just 2) `shouldBe` toBD "-0.12"
+    it "rounds to next even number if next decimal would be == 5 when using HALF_EVEN" $
+      divide (-15, 100) (HALF_EVEN, Just 1) `shouldBe` toBD "-0.2"
+    it "rounds up if next decimal would be > 5 when using HALF_EVEN" $
+      divide (-2, 3) (HALF_EVEN, Just 4) `shouldBe` toBD "-0.6667"
     it "throws an exception when PRECISE is used and a non-terminating decimal expansion is detected" $
-      evaluate (divide (-5, 9) PRECISE Nothing) `shouldThrow` anyException
+      evaluate (divide (-5, 9) (PRECISE, Nothing)) `shouldThrow` anyException
     it "gives a precise value when using PRECISE and no max precision" $
-      divide (-1, 32) PRECISE Nothing `shouldBe` toBD "-0.03125"
+      divide (-1, 32) (PRECISE, Nothing) `shouldBe` toBD "-0.03125"
     it "gives a precise value when using PRECISE and a sufficient precision" $
-      divide (-1, 32) PRECISE (Just 5) `shouldBe` toBD "-0.03125"
+      divide (-1, 32) (PRECISE, Just 5) `shouldBe` toBD "-0.03125"
     it "gives a precise value when using PRECISE and a to small precision" $
-      evaluate (divide (-1, 32) PRECISE (Just 4)) `shouldThrow` anyException
+      evaluate (divide (-1, 32) (PRECISE, Just 4)) `shouldThrow` anyException
 
   describe "divide +/-" $ do
     -- checking divisor < 0
     it "divides BigDecimals applying RoundingMode and precision" $
-      divide (2, -3) ROUND_HALF_UP (Just 9) `shouldBe` toBD "-0.666666667"
-    it "always rounds down when using ROUND_DOWN" $
-      divide (2, -3) ROUND_DOWN (Just 9) `shouldBe` toBD "-0.666666666"
-    it "always rounds towards -INF when using ROUND_FLOOR" $
-      divide (2, -3) ROUND_FLOOR (Just 9) `shouldBe` toBD "-0.666666667"
-    it "rounds up when using ROUND_UP when there is a remainder" $
-      divide (1, -9) ROUND_UP (Just 3) `shouldBe` toBD "-0.112"
-    it "does not round when there is no remainder when using ROUND_UP" $
-      divide (14, -100) ROUND_UP (Just 2) `shouldBe` toBD "-0.14"
-    it "rounds towards +INF when using ROUND_CEILING when there is a remainder" $
-      divide (1, -9) ROUND_CEILING (Just 3) `shouldBe` toBD "-0.111"
-    it "does not round when there is no remainder when using ROUND_UP" $
-      divide (14, -100) ROUND_CEILING (Just 2) `shouldBe` toBD "-0.14"
-    it "rounds down if next decimal would be <= 5 when using ROUND_HALF_DOWN" $
-      divide (5, -9) ROUND_HALF_DOWN (Just 4) `shouldBe` toBD "-0.5555"
-    it "rounds up if next decimal would be > 5 when using ROUND_HALF_DOWN" $
-      divide (2, -3) ROUND_HALF_DOWN (Just 4) `shouldBe` toBD "-0.6667"
-    it "rounds up if next decimal would be >= 5 when using ROUND_HALF_UP" $
-      divide (5, -9) ROUND_HALF_UP (Just 4) `shouldBe` toBD "-0.5556"
-    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
-      divide (5, -9) ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "-0.5556"
-    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
-      divide (1, -8) ROUND_HALF_EVEN (Just 2) `shouldBe` toBD "-0.12"
-    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
-      divide (15, -100) ROUND_HALF_EVEN (Just 1) `shouldBe` toBD "-0.2"
-    it "rounds up if next decimal would be > 5 when using ROUND_HALF_EVEN" $
-      divide (2, -3) ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "-0.6667"
+      divide (2, -3) (HALF_UP, Just 9) `shouldBe` toBD "-0.666666667"
+    it "always rounds down when using DOWN" $
+      divide (2, -3) (DOWN, Just 9) `shouldBe` toBD "-0.666666666"
+    it "always rounds towards -INF when using FLOOR" $
+      divide (2, -3) (FLOOR, Just 9) `shouldBe` toBD "-0.666666667"
+    it "rounds up when using UP when there is a remainder" $
+      divide (1, -9) (UP, Just 3) `shouldBe` toBD "-0.112"
+    it "does not round when there is no remainder when using UP" $
+      divide (14, -100) (UP, Just 2) `shouldBe` toBD "-0.14"
+    it "rounds towards +INF when using CEILING when there is a remainder" $
+      divide (1, -9) (CEILING, Just 3) `shouldBe` toBD "-0.111"
+    it "does not round when there is no remainder when using UP" $
+      divide (14, -100) (CEILING, Just 2) `shouldBe` toBD "-0.14"
+    it "rounds down if next decimal would be <= 5 when using HALF_DOWN" $
+      divide (5, -9) (HALF_DOWN, Just 4) `shouldBe` toBD "-0.5555"
+    it "rounds up if next decimal would be > 5 when using HALF_DOWN" $
+      divide (2, -3) (HALF_DOWN, Just 4) `shouldBe` toBD "-0.6667"
+    it "rounds up if next decimal would be >= 5 when using HALF_UP" $
+      divide (5, -9) (HALF_UP, Just 4) `shouldBe` toBD "-0.5556"
+    it "rounds to next even number if next decimal would be == 5 when using HALF_EVEN" $
+      divide (5, -9) (HALF_EVEN, Just 4) `shouldBe` toBD "-0.5556"
+    it "rounds to next even number if next decimal would be == 5 when using HALF_EVEN" $
+      divide (1, -8) (HALF_EVEN, Just 2) `shouldBe` toBD "-0.12"
+    it "rounds to next even number if next decimal would be == 5 when using HALF_EVEN" $
+      divide (15, -100) (HALF_EVEN, Just 1) `shouldBe` toBD "-0.2"
+    it "rounds up if next decimal would be > 5 when using HALF_EVEN" $
+      divide (2, -3) (HALF_EVEN, Just 4) `shouldBe` toBD "-0.6667"
     it "throws an exception when PRECISE is used and a non-terminating decimal expansion is detected" $
-      evaluate (divide (5, -9) PRECISE Nothing) `shouldThrow` anyException
+      evaluate (divide (5, -9) (PRECISE, Nothing)) `shouldThrow` anyException
     it "gives a precise value when using PRECISE and no max precision" $
-      divide (1, -32) PRECISE Nothing `shouldBe` toBD "-0.03125"
+      divide (1, -32) (PRECISE, Nothing) `shouldBe` toBD "-0.03125"
     it "gives a precise value when using PRECISE and a sufficient precision" $
-      divide (1, -32) PRECISE (Just 5) `shouldBe` toBD "-0.03125"
+      divide (1, -32) (PRECISE, Just 5) `shouldBe` toBD "-0.03125"
     it "gives a precise value when using PRECISE and a to small precision" $
-      evaluate (divide (1, -32) PRECISE (Just 4)) `shouldThrow` anyException
+      evaluate (divide (1, -32) (PRECISE, Just 4)) `shouldThrow` anyException
 
   describe "divide -/-" $ do
     -- checking dividend and divisor < 0
     it "divides BigDecimals applying RoundingMode and precision" $
-      divide (-2, -3) ROUND_HALF_UP (Just 9) `shouldBe` toBD "0.666666667"
-    it "always rounds down when using ROUND_DOWN" $
-      divide (-2, -3) ROUND_DOWN (Just 9) `shouldBe` toBD "0.666666666"
-    it "always rounds towards -INF when using ROUND_FLOOR" $
-      divide (-2, -3) ROUND_FLOOR (Just 9) `shouldBe` toBD "0.666666666"
-    it "rounds up when using ROUND_UP when there is a remainder" $
-      divide (-1, -9) ROUND_UP (Just 3) `shouldBe` toBD "0.112"
-    it "does not round when there is no remainder when using ROUND_UP" $
-      divide (-14, -100) ROUND_UP (Just 2) `shouldBe` toBD "0.14"
-    it "rounds towards +INF when using ROUND_CEILING when there is a remainder" $
-      divide (-1, -9) ROUND_CEILING (Just 3) `shouldBe` toBD "0.112"
-    it "does not round when there is no remainder when using ROUND_UP" $
-      divide (-14, -100) ROUND_CEILING (Just 2) `shouldBe` toBD "0.14"
-    it "rounds down if next decimal would be <= 5 when using ROUND_HALF_DOWN" $
-      divide (-5, -9) ROUND_HALF_DOWN (Just 4) `shouldBe` toBD "0.5555"
-    it "rounds up if next decimal would be > 5 when using ROUND_HALF_DOWN" $
-      divide (-2, -3) ROUND_HALF_DOWN (Just 4) `shouldBe` toBD "0.6667"
-    it "rounds up if next decimal would be >= 5 when using ROUND_HALF_UP" $
-      divide (-5, -9) ROUND_HALF_UP (Just 4) `shouldBe` toBD "0.5556"
-    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
-      divide (-5, -9) ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "0.5556"
-    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
-      divide (-1, -8) ROUND_HALF_EVEN (Just 2) `shouldBe` toBD "0.12"
-    it "rounds to next even number if next decimal would be == 5 when using ROUND_HALF_EVEN" $
-      divide (-15, -100) ROUND_HALF_EVEN (Just 1) `shouldBe` toBD "0.2"
-    it "rounds up if next decimal would be > 5 when using ROUND_HALF_EVEN" $
-      divide (-2, -3) ROUND_HALF_EVEN (Just 4) `shouldBe` toBD "0.6667"
+      divide (-2, -3) (HALF_UP, Just 9) `shouldBe` toBD "0.666666667"
+    it "always rounds down when using DOWN" $
+      divide (-2, -3) (DOWN, Just 9) `shouldBe` toBD "0.666666666"
+    it "always rounds towards -INF when using FLOOR" $
+      divide (-2, -3) (FLOOR, Just 9) `shouldBe` toBD "0.666666666"
+    it "rounds up when using UP when there is a remainder" $
+      divide (-1, -9) (UP, Just 3) `shouldBe` toBD "0.112"
+    it "does not round when there is no remainder when using UP" $
+      divide (-14, -100) (UP, Just 2) `shouldBe` toBD "0.14"
+    it "rounds towards +INF when using CEILING when there is a remainder" $
+      divide (-1, -9) (CEILING, Just 3) `shouldBe` toBD "0.112"
+    it "does not round when there is no remainder when using UP" $
+      divide (-14, -100) (CEILING, Just 2) `shouldBe` toBD "0.14"
+    it "rounds down if next decimal would be <= 5 when using HALF_DOWN" $
+      divide (-5, -9) (HALF_DOWN, Just 4) `shouldBe` toBD "0.5555"
+    it "rounds up if next decimal would be > 5 when using HALF_DOWN" $
+      divide (-2, -3) (HALF_DOWN, Just 4) `shouldBe` toBD "0.6667"
+    it "rounds up if next decimal would be >= 5 when using HALF_UP" $
+      divide (-5, -9) (HALF_UP, Just 4) `shouldBe` toBD "0.5556"
+    it "rounds to next even number if next decimal would be == 5 when using HALF_EVEN" $
+      divide (-5, -9) (HALF_EVEN, Just 4) `shouldBe` toBD "0.5556"
+    it "rounds to next even number if next decimal would be == 5 when using HALF_EVEN" $
+      divide (-1, -8) (HALF_EVEN, Just 2) `shouldBe` toBD "0.12"
+    it "rounds to next even number if next decimal would be == 5 when using HALF_EVEN" $
+      divide (-15, -100) (HALF_EVEN, Just 1) `shouldBe` toBD "0.2"
+    it "rounds up if next decimal would be > 5 when using HALF_EVEN" $
+      divide (-2, -3) (HALF_EVEN, Just 4) `shouldBe` toBD "0.6667"
     it "throws an exception when PRECISE is used and a non-terminating decimal expansion is detected" $
-      evaluate (divide (-5, -9) PRECISE Nothing) `shouldThrow` anyException
+      evaluate (divide (-5, -9) (PRECISE, Nothing)) `shouldThrow` anyException
     it "gives a precise value when using PRECISE and no max precision" $
-      divide (-1, -32) PRECISE Nothing `shouldBe` toBD "0.03125"
+      divide (-1, -32) (PRECISE, Nothing) `shouldBe` toBD "0.03125"
     it "gives a precise value when using PRECISE and a sufficient precision" $
-      divide (-1, -32) PRECISE (Just 5) `shouldBe` toBD "0.03125"
+      divide (-1, -32) (PRECISE, Just 5) `shouldBe` toBD "0.03125"
     it "gives a precise value when using PRECISE and a to small precision" $
-      evaluate (divide (-1, -32) PRECISE (Just 4)) `shouldThrow` anyException
+      evaluate (divide (-1, -32) (PRECISE, Just 4)) `shouldThrow` anyException
 
 
   describe "shrink" $ do
