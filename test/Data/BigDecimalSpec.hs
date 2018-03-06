@@ -2,12 +2,12 @@ module Data.BigDecimalSpec
   (main, spec)
 where
 
-import Test.Hspec
-import Test.QuickCheck hiding (shrink)
-import Test.Hspec.QuickCheck (modifyMaxSize, modifyMaxSuccess)
-import Data.BigDecimal
-import GHC.Real (Ratio((:%))) -- we only need the Ratio Constructor
-import Control.Exception (evaluate)
+import           Control.Exception     (evaluate)
+import           Data.BigDecimal
+import           GHC.Real              (Ratio ((:%)))
+import           Test.Hspec
+import           Test.Hspec.QuickCheck (modifyMaxSize, modifyMaxSuccess)
+import           Test.QuickCheck       hiding (shrink)
 
 -- `main` is here so that this module can be run from GHCi on its own.  It is
 -- not needed for automatic spec discovery.
@@ -37,9 +37,9 @@ spec = do
     it "converts BigDecimals to string" $
       toString (BigDecimal (-145123) 3) `shouldBe` "-145.123"
     it "adds leading 0s if required" $
-          toString (BigDecimal (-14) 10) `shouldBe` "-0.0000000014"
+      toString (BigDecimal (-14) 10) `shouldBe` "-0.0000000014"
     it "can handle integer values" $
-          toString 10 `shouldBe` "10"
+      toString 10 `shouldBe` "10"
     it "is inverse of toBD" $
       property $ \bd -> (toString . toBD . toString) bd === toString (bd :: BigDecimal)
 
@@ -111,7 +111,7 @@ spec = do
     it "works for any BigDecimal" $
       property $ \bd -> negate bd === (-bd :: BigDecimal)
     it "is the same as *(-1)" $
-          property $ \bd -> negate bd === (-1 * bd :: BigDecimal)
+      property $ \bd -> negate bd === (-1 * bd :: BigDecimal)
     it "is its own inverse" $
       property $ \bd -> negate (negate bd) === (bd :: BigDecimal)
 
