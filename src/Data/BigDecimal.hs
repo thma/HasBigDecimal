@@ -145,8 +145,14 @@ toString bd@(BigDecimal intValue scale) =
       sign = if intValue < 0 then "-" else ""
   in sign ++ if not (null decimals) then ints ++ "." ++ decimals else ints
 
-sqrt :: BigDecimal -> MathContext -> BigDecimal
-sqrt bd mc@(rounding, Just scale) = undefined
+sqrt :: BigDecimal -> Integer -> Maybe BigDecimal
+sqrt bd scale = refine bd (bd/2) (BigDecimal 1 scale)
+
+refine :: BigDecimal -> BigDecimal -> BigDecimal -> Maybe BigDecimal
+refine x initial maxDelta = find withinPrecision $ iterate newtons initial
+  where
+    withinPrecision guess = abs (guess*guess - x) < maxDelta * x
+    newtons guess = shrink 0 (guess + x / guess) / 2
 
 sqr :: Double -> Maybe Double
 sqr x = refineSqrtGuess x (x/2)
@@ -154,7 +160,7 @@ sqr x = refineSqrtGuess x (x/2)
 refineSqrtGuess :: Double -> Double -> Maybe Double
 refineSqrtGuess x initial = find withinPrecision $ iterate newtons initial
     where
-          withinPrecision guess = abs (guess^2 - x) < 0.001 * x
+          withinPrecision guess = abs (guess*guess - x) < 0.001 * x
           newtons guess = (guess + x / guess) / 2
 
 
