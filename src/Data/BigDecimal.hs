@@ -152,6 +152,3 @@ sqr x precision = fromMaybe (error "did not find a sqrt") $ refine x 1 precision
       where
         withinPrecision guess = abs ((guess*guess) - x) < BigDecimal 1 scale
         nextGuess guess = shrink 0 $ divide (guess + (x / guess), 2) (HALF_UP, Just scale)
-
-
-
