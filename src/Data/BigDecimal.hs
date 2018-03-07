@@ -46,7 +46,7 @@ instance Eq BigDecimal where
 
 instance Fractional BigDecimal where
   -- default division rounds up and does not limit precision
-  a / b = divide (matchScales (a, b)) (HALF_UP, Nothing)
+  a / b = shrink 0 $ divide (matchScales (a, b)) (HALF_UP, Nothing)
   fromRational (x :% y) = BigDecimal x 0 / BigDecimal y 0
 
 instance Real BigDecimal where
@@ -119,7 +119,7 @@ precision val = 1 + floor (logBase 10 $ abs $ fromInteger val)
 shrink :: Integer -> BigDecimal -> BigDecimal
 shrink prefScale bd@(BigDecimal val scale) =
   let (v, r) = quotRem val 10
-  in if r == 0 && 0 < prefScale && prefScale < scale
+  in if r == 0 && 0 <= prefScale && prefScale < scale
        then shrink prefScale $ BigDecimal v (scale - 1)
        else bd
 
@@ -145,22 +145,13 @@ toString bd@(BigDecimal intValue scale) =
       sign = if intValue < 0 then "-" else ""
   in sign ++ if not (null decimals) then ints ++ "." ++ decimals else ints
 
-sqrt :: BigDecimal -> Integer -> Maybe BigDecimal
-sqrt bd scale = refine bd (bd/2) (BigDecimal 1 scale)
-
-refine :: BigDecimal -> BigDecimal -> BigDecimal -> Maybe BigDecimal
-refine x initial maxDelta = find withinPrecision $ iterate newtons initial
+sqr :: BigDecimal -> Integer -> BigDecimal
+sqr x precision = fromMaybe (error "did not find a sqrt") $ refine x 1 precision
   where
-    withinPrecision guess = abs (guess*guess - x) < maxDelta * x
-    newtons guess = shrink 0 (guess + x / guess) / 2
+    refine x initial scale = find withinPrecision $ iterate nextGuess initial
+      where
+        withinPrecision guess = abs ((guess*guess) - x) < BigDecimal 1 scale
+        nextGuess guess = shrink 0 $ divide (guess + (x / guess), 2) (HALF_UP, Just scale)
 
-sqr :: Double -> Maybe Double
-sqr x = refineSqrtGuess x (x/2)
-
-refineSqrtGuess :: Double -> Double -> Maybe Double
-refineSqrtGuess x initial = find withinPrecision $ iterate newtons initial
-    where
-          withinPrecision guess = abs (guess*guess - x) < 0.001 * x
-          newtons guess = (guess + x / guess) / 2
 
 
