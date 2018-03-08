@@ -145,10 +145,10 @@ toString bd@(BigDecimal intValue scale) =
       sign = if intValue < 0 then "-" else ""
   in sign ++ if not (null decimals) then ints ++ "." ++ decimals else ints
 
-sqr :: BigDecimal -> Integer -> BigDecimal
-sqr x precision = fromMaybe (error "did not find a sqrt") $ refine x 1 precision
+sqr :: BigDecimal -> MathContext -> BigDecimal
+sqr x mc = fromMaybe (error "did not find a sqrt") $ refine x 1 mc
   where
-    refine x initial scale = find withinPrecision $ iterate nextGuess initial
+    refine x initial mc@(rMode, Just scale) = find withinPrecision $ iterate nextGuess initial
       where
-        withinPrecision guess = abs ((guess*guess) - x) < BigDecimal 10 scale
-        nextGuess guess = shrink 0 $ divide (guess + (x / guess), 2) (HALF_UP, Just scale)
+        withinPrecision guess = abs (guess*guess - x) < BigDecimal 10 scale
+        nextGuess guess = shrink 0 $ divide (guess + divide (x, guess) mc, 2) mc
