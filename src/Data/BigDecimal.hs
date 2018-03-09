@@ -32,7 +32,7 @@ getValue (BigDecimal v _) = v
 type MathContext = (RoundingMode, Maybe Integer)
 
 instance Num BigDecimal where
-  a + b = plus $ matchScales (a, b)
+  a + b = plus (a, b)
   a * b = mul (a, b)
   abs (BigDecimal v s) = BigDecimal (abs v) s
   signum (BigDecimal v _) = BigDecimal (signum v) 0
@@ -60,7 +60,7 @@ instance Ord BigDecimal where
 -- instance Floating BigDecimal where
 -- this is left as an exercise to the reader ;-)
 
--- | add two BigDecimals with same scale
+-- | add two BigDecimals
 plus :: (BigDecimal, BigDecimal) -> BigDecimal
 plus (a@(BigDecimal valA scaleA), b@(BigDecimal valB scaleB))
   | scaleA == scaleB = BigDecimal (valA + valB) scaleA
@@ -98,8 +98,8 @@ divUsing rounding a b =
 
 
 -- | round a BigDecimal to `n` digits applying rounding mode
-roundBD :: BigDecimal -> RoundingMode -> Integer -> BigDecimal
-roundBD bd@(BigDecimal val scale) rMode n
+roundBD :: BigDecimal -> MathContext -> BigDecimal
+roundBD bd@(BigDecimal val scale) mc@(rMode, Just n)
   | n < 0 || n >= scale = bd
   | otherwise           = BigDecimal (divUsing rMode val (10 ^ (scale-n))) n
 
@@ -145,10 +145,19 @@ toString bd@(BigDecimal intValue scale) =
       sign = if intValue < 0 then "-" else ""
   in sign ++ if not (null decimals) then ints ++ "." ++ decimals else ints
 
+
+-- | construct a MathContext for rounding HALF_UP with scale decimal digits
+halfUp :: Integer -> MathContext
+halfUp scale = (HALF_UP, Just scale)
+
+-- | computes the square root of any non-negative BigDecimal
 sqr :: BigDecimal -> MathContext -> BigDecimal
-sqr x mc = fromMaybe (error "did not find a sqrt") $ refine x 1 mc
-  where
-    refine x initial mc@(rMode, Just scale) = find withinPrecision $ iterate nextGuess initial
+sqr x mc
+  | x <  0    = error "can't determine the square root of negative numbers"
+  | x == 0    = 0
+  | otherwise = fromMaybe (error "did not find a sqrt") $ refine x 1 mc
       where
-        withinPrecision guess = abs (guess*guess - x) < BigDecimal 10 scale
-        nextGuess guess = shrink 0 $ divide (guess + divide (x, guess) mc, 2) mc
+        refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess initial
+          where
+            withinPrecision guess = abs (guess*guess - x) < BigDecimal 10 scale
+            nextGuess guess = shrink 0 $ divide (guess + divide (x, guess) mc, 2) mc

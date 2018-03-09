@@ -139,6 +139,12 @@ spec = do
     it "works for any non-zero divisors" $
       property $ \x y -> if y == 0 then 1 ===1 else fromRational (x :% y) === BigDecimal x 0 / BigDecimal y 0
 
+  describe "toRational" $ do
+    it "converts a BigDecimal to a Ratio" $
+      toRational (1 / BigDecimal 32 0) `shouldBe` (1 :% 32)
+    it "is inverse to fromRational" $
+      property $ \x -> (x::BigDecimal) === fromRational (toRational x)
+
   describe "divide +/+" $ do
     -- checking expresions >= 0
     it "divides BigDecimals applying RoundingMode and precision" $
@@ -307,3 +313,18 @@ spec = do
   describe "matchScales" $
     it "adjusts a pair of BigDecimals to use the same scale" $
       property $ \x y -> let (x', y') = matchScales (x,y) in getScale x' === getScale y'
+
+  describe "roundBD" $ do
+    it "rounds a BigDecimal " $
+      roundBD (BigDecimal 123456 3) (halfUp 2) `shouldBe` BigDecimal 12346 2
+    it "ignores negative scales in MathContext" $
+      roundBD (BigDecimal 123456 3) (halfUp (-2)) `shouldBe` BigDecimal 123456 3
+    it "ignores MathContext with scale higher than in input value" $
+      roundBD (BigDecimal 123456 3) (halfUp 10) `shouldBe` BigDecimal 123456 3
+
+  -- mathematical functions on BigDecimals
+  describe "sqr" $ do
+    it "computes the square root of any non-negative BigDecimal" $
+      property $ \x scale -> let (x', r) = (abs x, sqr x' $ halfUp scale) in abs (r*r - x') < BigDecimal 10 scale
+    it "throws an exception if applied to a negative number" $
+      evaluate (sqr (-16) $ halfUp 2) `shouldThrow` anyException
