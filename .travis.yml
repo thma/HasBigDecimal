@@ -13,7 +13,7 @@ before_install:
 
 script:
   - stack --no-terminal --skip-ghc-check init
-  - stack --no-terminal --skip-ghc-check test
+  - stack --no-terminal --skip-ghc-check --coverage test
   - stack --no-terminal --skip-ghc-check build
 
 #install:
