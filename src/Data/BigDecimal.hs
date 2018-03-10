@@ -150,7 +150,8 @@ toString bd@(BigDecimal intValue scale) =
 halfUp :: Integer -> MathContext
 halfUp scale = (HALF_UP, Just scale)
 
--- | computes the square root of any non-negative BigDecimal
+-- | computes the square root of any non-negative BigDecimal, rounding and precision defined by MathContext.
+--   We are using Newton's algorithm.
 sqr :: BigDecimal -> MathContext -> BigDecimal
 sqr x mc
   | x <  0    = error "can't determine the square root of negative numbers"
@@ -161,3 +162,15 @@ sqr x mc
           where
             withinPrecision guess = abs (guess*guess - x) < BigDecimal 10 scale
             nextGuess guess = shrink 0 $ divide (guess + divide (x, guess) mc, 2) mc
+
+nthRoot :: BigDecimal -> Integer -> MathContext -> BigDecimal
+nthRoot x n mc
+  | x <  0    = error "can't determine root of negative numbers"
+  | x == 0    = 0
+  | otherwise = fromMaybe (error "did not find a sqrt") $ refine x 1 mc
+      where
+        refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess initial
+          where
+            withinPrecision guess = abs (guess^n - x) < BigDecimal 10 scale
+            nextGuess guess = shrink 0 $
+              divide ((guess * BigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, BigDecimal n 0) mc
