@@ -164,13 +164,13 @@ sqr x mc
             nextGuess guess = shrink 0 $ divide (guess + divide (x, guess) mc, 2) mc
 
 nthRoot :: BigDecimal -> Integer -> MathContext -> BigDecimal
-nthRoot x n mc
+nthRoot x n mc@(r,Just s)
   | x <  0    = error "can't determine root of negative numbers"
   | x == 0    = 0
-  | otherwise = fromMaybe (error "did not find a sqrt") $ refine x 1 mc
+  | otherwise = roundBD (fromMaybe (error "did not find a sqrt") $ refine x 1 (r, Just (s+4))) mc
       where
         refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess initial
           where
-            withinPrecision guess = abs (guess^n - x) < BigDecimal 10 scale
+            withinPrecision guess = abs (guess^n - x) < BigDecimal n 0 * BigDecimal 1000 scale
             nextGuess guess = shrink 0 $
               divide ((guess * BigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, BigDecimal n 0) mc

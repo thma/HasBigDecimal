@@ -328,3 +328,10 @@ spec = do
       property $ \x scale -> let (x', r) = (abs x, sqr x' $ halfUp scale) in abs (r*r - x') < BigDecimal 10 scale
     it "throws an exception if applied to a negative number" $
       evaluate (sqr (-16) $ halfUp 2) `shouldThrow` anyException
+
+  -- mathematical functions on BigDecimals
+  describe "nthRoot" $
+    it "computes the nth root of any non-negative BigDecimal" $
+      property $ \x n -> let (x', n', r) = (abs x, 1+abs n, nthRoot x' n' (halfUp 10)) in abs (r^n' - x') < BigDecimal (10*n') 10
+--    it "throws an exception if applied to a negative number" $
+--      evaluate (sqr (-16) $ halfUp 2) `shouldThrow` anyException
