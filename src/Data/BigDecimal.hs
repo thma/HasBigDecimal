@@ -156,12 +156,12 @@ sqr :: BigDecimal -> MathContext -> BigDecimal
 sqr x mc
   | x <  0    = error "can't determine the square root of negative numbers"
   | x == 0    = 0
-  | otherwise = fromMaybe (error "did not find a sqrt") $ refine x 1 mc
+  | otherwise = fst $ fromMaybe (error "did not find a sqrt") $ refine x 1 mc
       where
-        refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess initial
+        refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess (initial, 0)
           where
-            withinPrecision guess = abs (guess*guess - x) < BigDecimal 10 scale
-            nextGuess guess = shrink 0 $ divide (guess + divide (x, guess) mc, 2) mc
+            withinPrecision (guess, count) = abs (guess*guess - x) < BigDecimal 10 scale || count > 10 * scale * precision (getValue x)
+            nextGuess (guess, count) = (shrink 0 $ divide (guess + divide (x, guess) mc, 2) mc, count+1)
 
 nthRoot :: BigDecimal -> Integer -> MathContext -> BigDecimal
 nthRoot x n mc@(r,Just s)

@@ -325,7 +325,7 @@ spec = do
   -- mathematical functions on BigDecimals
   describe "sqr" $ do
     it "computes the square root of any non-negative BigDecimal" $
-      property $ \x scale -> let (x', r) = (abs x, sqr x' $ halfUp scale) in abs (r*r - x') < BigDecimal 10 scale
+      property $ \x scale -> let (x', r) = (abs x, sqr x' $ halfUp scale) in abs (r*r - x') < BigDecimal 100 scale
     it "throws an exception if applied to a negative number" $
       evaluate (sqr (-16) $ halfUp 2) `shouldThrow` anyException
 
