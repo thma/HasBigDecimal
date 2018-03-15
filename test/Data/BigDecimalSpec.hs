@@ -335,3 +335,4 @@ spec = do
       property $ \x n -> let (x', n', r) = (1+ abs x, 1+abs n, nthRoot x' n' (halfUp 10)) in abs (r^n' - x') < BigDecimal (n'*10000) 10
 --    it "throws an exception if applied to a negative number" $
 --      evaluate (sqr (-16) $ halfUp 2) `shouldThrow` anyException
+

@@ -175,3 +175,41 @@ nthRoot x n mc@(r,Just s)
             withinPrecision guess = abs (guess^n - x) < BigDecimal (n*10000) scale
             nextGuess guess = shrink 0 $
               divide ((guess * BigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, BigDecimal n 0) mc
+
+
+-- An exact division
+-- Courtesy of Max Rabkin
+(/.) :: (Real a, Fractional b) => a -> a -> b
+x /. y = fromRational $ toRational x / toRational y
+
+-- Compute n!
+fac :: (Enum a, Num a) => a -> a
+fac n = product [1..n]
+
+-- Compute n! / m! efficiently
+facDiv :: Integer -> Integer -> Integer
+facDiv n m
+    | n > m = product [n, n - 1 .. m + 1]
+    | n == m = 1
+    | otherwise = facDiv m n
+
+
+-- Compute pi using the specified number of iterations
+pi' :: Integer -> BigDecimal
+pi' steps = 1.0 / (12.0 * s / f)
+    where
+      s = sum [chudnovsky n | n <- [0..steps]]
+      f = c ** (3.0 / 2.0)-- Common factor in the sum
+
+      -- k-th term of the Chudnovsky serie
+      chudnovsky :: Integer -> BigDecimal
+      chudnovsky k
+          | even k = num /. den :: BigDecimal
+          | otherwise = -num /. den :: BigDecimal
+          where
+            num = facDiv (6 * k) (3 * k) * (a + b * k)
+            den = fac k ^ 3 * (c ^ (3 * k))
+
+      a = 13591409
+      b = 545140134
+      c = 640320 :: Integer
