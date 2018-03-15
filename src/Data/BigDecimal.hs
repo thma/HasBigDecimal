@@ -191,9 +191,7 @@ nthRoot x n mc@(r,Just s)
             nextGuess (guess, count) =
               (shrink 0 $ divide ((guess * BigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, BigDecimal n 0) mc,
                count+1)
-            withinPrecision guess = abs (guess^n - x) < BigDecimal (n*10000) scale
-            nextGuess guess = shrink 0 $
-              divide ((guess * BigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, BigDecimal n 0) mc
+
 
 
 -- An exact division
