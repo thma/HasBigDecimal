@@ -57,8 +57,23 @@ instance Ord BigDecimal where
     let (BigDecimal valA _, BigDecimal valB _) = matchScales (a, b)
     in compare valA valB
 
--- instance Floating BigDecimal where
--- this is left as an exercise to the reader ;-)
+
+instance Floating BigDecimal where
+-- implmentation is left as an exercise to the reader ;-)
+    pi    = undefined
+    exp   = undefined
+    log   = undefined
+    sin   = undefined
+    cos   = undefined
+    asin  = undefined
+    acos  = undefined
+    atan  = undefined
+    sinh  = undefined
+    cosh  = undefined
+    asinh = undefined
+    acosh = undefined
+    atanh = undefined
+
 
 -- | add two BigDecimals
 plus :: (BigDecimal, BigDecimal) -> BigDecimal
@@ -168,10 +183,14 @@ nthRoot x n mc@(r,Just s)
   | x <  0    = error "can't determine root of negative numbers"
   | x <  1    = undefined
   | x == 0    = 0
-  | otherwise = roundBD (fromMaybe (error "did not find a sqrt") $ refine x 1 (r, Just (s+4))) mc
+  | otherwise = roundBD (fst (fromMaybe (error "did not find a sqrt") $ refine x 1 (r, Just (s+4)))) mc
       where
-        refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess initial
+        refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess (initial, 0)
           where
+            withinPrecision (guess, count) = abs (guess^n - x) < BigDecimal (n*10000) scale || count > 10 * scale * precision (getValue x)
+            nextGuess (guess, count) =
+              (shrink 0 $ divide ((guess * BigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, BigDecimal n 0) mc,
+               count+1)
             withinPrecision guess = abs (guess^n - x) < BigDecimal (n*10000) scale
             nextGuess guess = shrink 0 $
               divide ((guess * BigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, BigDecimal n 0) mc
