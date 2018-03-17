@@ -90,7 +90,7 @@ mul (BigDecimal valA scaleA, BigDecimal valB scaleB) = BigDecimal (valA * valB) 
 divide :: (BigDecimal, BigDecimal) -> MathContext -> BigDecimal
 divide (a, b) (rMode, prefScale) =
   let (BigDecimal numA _, BigDecimal numB _) = matchScales (a, b)
-      maxPrecision = fromMaybe (precision numA + round (fromInteger (precision numB) * 10 / 3)) prefScale
+      maxPrecision = fromMaybe (precision a + round (fromInteger (precision b) * 10 / 3)) prefScale
   in shrink maxPrecision (BigDecimal (divUsing rMode (numA * (10 :: Integer) ^ maxPrecision) numB) maxPrecision)
 
 -- | divide two correctly scaled Integers and apply the RoundingMode
@@ -126,9 +126,9 @@ matchScales (a@(BigDecimal integerA scaleA), b@(BigDecimal integerB scaleB))
   | otherwise = (a, b)
 
 -- | returns the number of digits of an Integer
-precision :: Integer -> Integer
+precision :: BigDecimal -> Integer
 precision 0   = 1
-precision val = 1 + floor (logBase 10 $ abs $ fromInteger val)
+precision (BigDecimal val _)  = 1 + floor (logBase 10 $ abs $ fromInteger val)
 
 -- | removes trailing zeros from a BigDecimals intValue by decreasing the scale
 shrink :: Integer -> BigDecimal -> BigDecimal
@@ -175,7 +175,7 @@ sqr x mc
       where
         refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess (initial, 0)
           where
-            withinPrecision (guess, count) = abs (guess*guess - x) < BigDecimal 10 scale || count > 10 * scale * precision (getValue x)
+            withinPrecision (guess, count) = abs (guess*guess - x) < BigDecimal 10 scale || count > 10 * scale * precision x
             nextGuess (guess, count) = (shrink 0 $ divide (guess + divide (x, guess) mc, 2) mc, count+1)
 
 nthRoot :: BigDecimal -> Integer -> MathContext -> BigDecimal
@@ -187,7 +187,7 @@ nthRoot x n mc@(r,Just s)
       where
         refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess (initial, 0)
           where
-            withinPrecision (guess, count) = abs (guess^n - x) < BigDecimal (n*10000) scale || count > 10 * scale * precision (getValue x)
+            withinPrecision (guess, count) = abs (guess^n - x) < BigDecimal (n*10000) scale || count > 10 * scale * precision x
             nextGuess (guess, count) =
               (shrink 0 $ divide ((guess * BigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, BigDecimal n 0) mc,
                count+1)
@@ -212,21 +212,24 @@ facDiv n m
 
 
 -- Compute pi using the specified number of iterations
-pi' :: Integer -> BigDecimal
-pi' steps = 1.0 / (12.0 * s / f)
+pi' :: MathContext -> BigDecimal
+pi' mc@(rMode, Just scale) = divide (1, 12 * divide (s,f) mc) mc
     where
-      s = sum [chudnovsky n | n <- [0..steps]]
-      f = c ** (3.0 / 2.0)-- Common factor in the sum
+      --mc = halfUp $ steps * 14
+      steps = 1 + div scale  14
+      s = sum [chudnovsky n | n <- [0..steps]] :: BigDecimal
+      f = sqr (BigDecimal (c*c*c) 0) mc  --fromInteger c ** (3.0 / 2.0) :: BigDecimal -- Common factor in the sum
 
       -- k-th term of the Chudnovsky serie
       chudnovsky :: Integer -> BigDecimal
       chudnovsky k
-          | even k = num /. den :: BigDecimal
-          | otherwise = -num /. den :: BigDecimal
+          | even k = quot
+          | otherwise = -quot
           where
+            quot = divide (fromInteger num, fromInteger den) mc
             num = facDiv (6 * k) (3 * k) * (a + b * k)
             den = fac k ^ 3 * (c ^ (3 * k))
 
       a = 13591409
       b = 545140134
-      c = 640320 :: Integer
+      c = 640320
