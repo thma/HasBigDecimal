@@ -60,7 +60,7 @@ instance Ord BigDecimal where
 
 instance Floating BigDecimal where
 -- implementation is left as an exercise to the reader ;-)
-    pi    = pi' (FLOOR, Just 100)
+    pi    = piChudnovsky (FLOOR, Just 100)
     exp   = undefined
     log   = undefined
     sin   = undefined
@@ -195,13 +195,13 @@ nthRoot x n mc@(r,Just s)
 
 -- | Compute pi using rounding mode and scale of the specified MathContext
 --   Sources: https://wiki.haskell.org/Integers_too_big_for_floats & https://github.com/eobermuhlner/big-math
-pi' :: MathContext -> BigDecimal
-pi' mc@(rMode, Just scale) = divide (1, 12 * divide (s,f) mc') mc
+piChudnovsky :: MathContext -> BigDecimal
+piChudnovsky mc@(rMode, Just scale) = divide (1, 12 * divide (s,f) mc') mc
     where
       mc'   = (rMode, Just $ scale + 3) -- increase precision to avoid propagation of rounding errors
       steps = 1 + div scale  14         -- taken from github.com/eobermuhlner/big-math
       s = sum [chudnovsky n | n <- [0..steps]] :: BigDecimal
-      f = sqr (BigDecimal (c^3) 0) mc'  -- Common factor in the sum
+      f = sqr (BigDecimal (c^3) 0) mc  -- Common factor in the sum
 
       -- k-th term of the Chudnovsky series
       chudnovsky :: Integer -> BigDecimal
@@ -209,7 +209,7 @@ pi' mc@(rMode, Just scale) = divide (1, 12 * divide (s,f) mc') mc
           | even k    =  quot
           | otherwise = -quot
           where
-            quot = divide (fromInteger num, fromInteger den) mc'
+            quot = divide (fromInteger num, fromInteger den) mc
             num  = facDiv (6 * k) (3 * k) * (a + b * k)
             den  = fac k ^ 3 * (c ^ (3 * k))
 
