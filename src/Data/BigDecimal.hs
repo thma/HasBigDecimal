@@ -59,8 +59,8 @@ instance Ord BigDecimal where
 
 
 instance Floating BigDecimal where
--- implmentation is left as an exercise to the reader ;-)
-    pi    = undefined
+-- implementation is left as an exercise to the reader ;-)
+    pi    = pi' (FLOOR, Just 100)
     exp   = undefined
     log   = undefined
     sin   = undefined
@@ -211,14 +211,14 @@ facDiv n m
     | otherwise = facDiv m n
 
 
--- Compute pi using the specified number of iterations
+-- Compute pi using rounding mode and scale of the specified MathContext
 pi' :: MathContext -> BigDecimal
-pi' mc@(rMode, Just scale) = divide (1, 12 * divide (s,f) mc) mc
+pi' mc@(rMode, Just scale) = divide (1, 12 * divide (s,f) mc') mc
     where
-      --mc = halfUp $ steps * 14
-      steps = 1 + div scale  14
+      mc' = (rMode, Just $ scale + 3) -- to avoid propagation of rounding errors we increase the precision
+      steps = 1 + div scale  15
       s = sum [chudnovsky n | n <- [0..steps]] :: BigDecimal
-      f = sqr (BigDecimal (c*c*c) 0) mc  --fromInteger c ** (3.0 / 2.0) :: BigDecimal -- Common factor in the sum
+      f = sqr (BigDecimal (c^3) 0) mc'  -- Common factor in the sum
 
       -- k-th term of the Chudnovsky serie
       chudnovsky :: Integer -> BigDecimal
@@ -226,7 +226,7 @@ pi' mc@(rMode, Just scale) = divide (1, 12 * divide (s,f) mc) mc
           | even k = quot
           | otherwise = -quot
           where
-            quot = divide (fromInteger num, fromInteger den) mc
+            quot = divide (fromInteger num, fromInteger den) mc'
             num = facDiv (6 * k) (3 * k) * (a + b * k)
             den = fac k ^ 3 * (c ^ (3 * k))
 
