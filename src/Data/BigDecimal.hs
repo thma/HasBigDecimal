@@ -107,7 +107,7 @@ divUsing rounding a b =
        DOWN      -> quot
        FLOOR     -> if quot >= 0   then quot else quot - 1
        HALF_EVEN
-         | delta > 0              -> quot + signum quot
+         | delta  > 0             -> quot + signum quot
          | delta == 0 && odd quot -> quot + signum quot
          | otherwise              -> quot
 
@@ -193,43 +193,39 @@ nthRoot x n mc@(r,Just s)
                count+1)
 
 
-
--- An exact division
--- Courtesy of Max Rabkin
-(/.) :: (Real a, Fractional b) => a -> a -> b
-x /. y = fromRational $ toRational x / toRational y
-
--- Compute n!
-fac :: (Enum a, Num a) => a -> a
-fac n = product [1..n]
-
--- Compute n! / m! efficiently
-facDiv :: Integer -> Integer -> Integer
-facDiv n m
-    | n > m = product [n, n - 1 .. m + 1]
-    | n == m = 1
-    | otherwise = facDiv m n
-
-
--- Compute pi using rounding mode and scale of the specified MathContext
+-- | Compute pi using rounding mode and scale of the specified MathContext
+--   Sources: https://wiki.haskell.org/Integers_too_big_for_floats & https://github.com/eobermuhlner/big-math
 pi' :: MathContext -> BigDecimal
 pi' mc@(rMode, Just scale) = divide (1, 12 * divide (s,f) mc') mc
     where
-      mc' = (rMode, Just $ scale + 3) -- to avoid propagation of rounding errors we increase the precision
-      steps = 1 + div scale  15
+      mc'   = (rMode, Just $ scale + 3) -- increase precision to avoid propagation of rounding errors
+      steps = 1 + div scale  14         -- taken from github.com/eobermuhlner/big-math
       s = sum [chudnovsky n | n <- [0..steps]] :: BigDecimal
       f = sqr (BigDecimal (c^3) 0) mc'  -- Common factor in the sum
 
-      -- k-th term of the Chudnovsky serie
+      -- k-th term of the Chudnovsky series
       chudnovsky :: Integer -> BigDecimal
       chudnovsky k
-          | even k = quot
+          | even k    =  quot
           | otherwise = -quot
           where
             quot = divide (fromInteger num, fromInteger den) mc'
-            num = facDiv (6 * k) (3 * k) * (a + b * k)
-            den = fac k ^ 3 * (c ^ (3 * k))
+            num  = facDiv (6 * k) (3 * k) * (a + b * k)
+            den  = fac k ^ 3 * (c ^ (3 * k))
+
+      -- Compute n!
+      fac :: (Enum a, Num a) => a -> a
+      fac n = product [1..n]
+
+      -- Compute n! / m! efficiently
+      facDiv :: Integer -> Integer -> Integer
+      facDiv n m
+          | n > m     = product [n, n - 1 .. m + 1]
+          | n == m    = 1
+          | otherwise = facDiv m n
 
       a = 13591409
       b = 545140134
       c = 640320
+
+
