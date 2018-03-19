@@ -49,6 +49,9 @@ instance Fractional BigDecimal where
   a / b = shrink 0 $ divide (matchScales (a, b)) (HALF_UP, Nothing)
   fromRational (x :% y) = BigDecimal x 0 / BigDecimal y 0
 
+toBigDecimal :: Rational -> MathContext -> BigDecimal
+toBigDecimal (x :% y) = divide (fromInteger x, fromInteger y)
+
 instance Real BigDecimal where
   toRational (BigDecimal val scale) = toRational val * 10^^(-scale)
 
@@ -60,7 +63,7 @@ instance Ord BigDecimal where
 
 instance Floating BigDecimal where
 -- implementation is left as an exercise to the reader ;-)
-    pi    = piChudnovsky (FLOOR, Just 100)
+    pi    = piChudnovsky (DOWN, Just 100)
     exp   = undefined
     log   = undefined
     sin   = undefined
@@ -196,20 +199,20 @@ nthRoot x n mc@(r,Just s)
 -- | Compute pi using rounding mode and scale of the specified MathContext
 --   Sources: https://wiki.haskell.org/Integers_too_big_for_floats & https://github.com/eobermuhlner/big-math
 piChudnovsky :: MathContext -> BigDecimal
-piChudnovsky mc@(rMode, Just scale) = divide (1, 12 * divide (s,f) mc') mc
+piChudnovsky mc@(rMode, Just scale) = divide (1, 12 * divide (toBigDecimal s mc,f) mc') mc
     where
       mc'   = (rMode, Just $ scale + 3) -- increase precision to avoid propagation of rounding errors
       steps = 1 + div scale  14         -- taken from github.com/eobermuhlner/big-math
-      s = sum [chudnovsky n | n <- [0..steps]] :: BigDecimal
-      f = sqr (BigDecimal (c^3) 0) mc  -- Common factor in the sum
+      s = sum [chudnovsky n | n <- [0..steps]] :: Rational
+      f = sqr (fromInteger c^3) mc      -- Common factor in the sum
 
       -- k-th term of the Chudnovsky series
-      chudnovsky :: Integer -> BigDecimal
+      chudnovsky :: Integer -> Rational
       chudnovsky k
           | even k    =  quot
           | otherwise = -quot
           where
-            quot = divide (fromInteger num, fromInteger den) mc
+            quot = num :% den -- divide (fromInteger num, fromInteger den) mc
             num  = facDiv (6 * k) (3 * k) * (a + b * k)
             den  = fac k ^ 3 * (c ^ (3 * k))
 
