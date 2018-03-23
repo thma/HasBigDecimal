@@ -5,7 +5,8 @@ where
 import           Control.Exception     (evaluate)
 import           Data.BigDecimal
 import           GHC.Real              (Ratio ((:%)))
-import           Test.Hspec
+import           Test.Hspec            hiding (it)
+import qualified Test.Hspec as HS      (it)
 import           Test.Hspec.QuickCheck (modifyMaxSize, modifyMaxSuccess)
 import           Test.QuickCheck       hiding (shrink)
 
@@ -22,8 +23,8 @@ instance Arbitrary BigDecimal where
       NonNegative scale <- arbitrary
       return $ BigDecimal unscaledValue scale
 
---myit :: (HasCallStack, Example a1) => String -> a1 -> SpecWith (Arg a1)
---myit = modifyMaxSuccess (const 1000) it
+it :: (HasCallStack, Example a) => String -> a -> SpecWith (Arg a)
+it label action = modifyMaxSuccess (const 1000) $ HS.it label action
 
 spec :: Spec
 spec = do

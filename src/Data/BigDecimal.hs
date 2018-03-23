@@ -2,7 +2,7 @@ module Data.BigDecimal where
 
 import           Data.List
 import           Data.Maybe (fromMaybe)
-import           GHC.Real   (Ratio ((:%)))
+import           GHC.Real   ((%), Ratio ((:%)))
 
 data RoundingMode
   = UP        -- Rounding mode to round away from zero.
@@ -47,10 +47,10 @@ instance Eq BigDecimal where
 instance Fractional BigDecimal where
   -- default division rounds up and does not limit precision
   a / b = shrink 0 $ divide (matchScales (a, b)) (HALF_UP, Nothing)
-  fromRational (x :% y) = BigDecimal x 0 / BigDecimal y 0
+  fromRational ratio@(x :% y) = fromRatio ratio (HALF_UP, Nothing)
 
-toBigDecimal :: Rational -> MathContext -> BigDecimal
-toBigDecimal (x :% y) = divide (fromInteger x, fromInteger y)
+fromRatio :: Rational -> MathContext -> BigDecimal
+fromRatio (x :% y) = divide (fromInteger x, fromInteger y)
 
 instance Real BigDecimal where
   toRational (BigDecimal val scale) = toRational val * 10^^(-scale)
@@ -63,8 +63,8 @@ instance Ord BigDecimal where
 
 instance Floating BigDecimal where
 -- implementation is left as an exercise to the reader ;-)
-    pi    = piChudnovsky (DOWN, Just 100)
-    exp   = undefined
+    pi    = piChudnovsky defaultMC
+    exp   = undefined -- e^x
     log   = undefined
     sin   = undefined
     cos   = undefined
@@ -77,6 +77,15 @@ instance Floating BigDecimal where
     acosh = undefined
     atanh = undefined
 
+-- not required for minimal implementation
+    sqrt x = sqr x defaultMC
+    x ** y = nthRoot (x^b) n defaultMC
+                where
+                  (b :% n) = toRational y
+
+
+
+defaultMC = (DOWN, Just 100)
 
 -- | add two BigDecimals
 plus :: (BigDecimal, BigDecimal) -> BigDecimal
@@ -199,7 +208,7 @@ nthRoot x n mc@(r,Just s)
 -- | Compute pi using rounding mode and scale of the specified MathContext
 --   Sources: https://wiki.haskell.org/Integers_too_big_for_floats & https://github.com/eobermuhlner/big-math
 piChudnovsky :: MathContext -> BigDecimal
-piChudnovsky mc@(rMode, Just scale) = divide (1, 12 * divide (toBigDecimal s mc,f) mc') mc
+piChudnovsky mc@(rMode, Just scale) = divide (1, 12 * divide (fromRatio s mc,f) mc') mc
     where
       mc'   = (rMode, Just $ scale + 3) -- increase precision to avoid propagation of rounding errors
       steps = 1 + div scale  14         -- taken from github.com/eobermuhlner/big-math
@@ -212,7 +221,7 @@ piChudnovsky mc@(rMode, Just scale) = divide (1, 12 * divide (toBigDecimal s mc,
           | even k    =  quot
           | otherwise = -quot
           where
-            quot = num :% den -- divide (fromInteger num, fromInteger den) mc
+            quot = num % den
             num  = facDiv (6 * k) (3 * k) * (a + b * k)
             den  = fac k ^ 3 * (c ^ (3 * k))
 
