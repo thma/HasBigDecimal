@@ -192,8 +192,8 @@ sqr x mc
 
 nthRoot :: BigDecimal -> Integer -> MathContext -> BigDecimal
 nthRoot x n mc@(r,Just s)
-  | x <  0    = error "can't determine root of negative numbers"
-  | x <  1    = undefined
+  | x <  0 && even n   = error "can't determine even roots of negative numbers"
+  | x <  0 && odd  n   = - nthRoot x (-n) mc
   | x == 0    = 0
   | otherwise = roundBD (fst (fromMaybe (error "did not find a sqrt") $ refine x 1 (r, Just (s+4)))) mc
       where

@@ -331,11 +331,15 @@ spec = do
       evaluate (sqr (-16) $ halfUp 2) `shouldThrow` anyException
 
   -- mathematical functions on BigDecimals
-  describe "nthRoot" $
+  describe "nthRoot" $ do
     it "computes the nth root of any non-negative BigDecimal" $
       property $ \x n -> let (x', n', r) = (1+ abs x, 1+abs n, nthRoot x' n' (halfUp 10)) in abs (r^n' - x') < BigDecimal (n'*10000) 10
---    it "throws an exception if applied to a negative number" $
---      evaluate (sqr (-16) $ halfUp 2) `shouldThrow` anyException
+    it "throws an exception if trying to get even root of a negative number" $
+      evaluate (nthRoot (-16) 4 $ halfUp 2) `shouldThrow` anyException
+    it "computes odd roots of any negative BigDecimal" $
+      property $ \x n -> let (x', n', r) = ((-1)- abs x, if even n then 1 + abs n else abs n, nthRoot x' n' (halfUp 10)) in abs (r^n' - x') < BigDecimal (n'*10000) 10
+
+
 
   describe "pi" $
    it "computes pi with a default precision of 100 decimal digits" $
