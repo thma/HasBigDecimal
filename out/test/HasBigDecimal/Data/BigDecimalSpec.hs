@@ -24,7 +24,7 @@ instance Arbitrary BigDecimal where
       return $ BigDecimal unscaledValue scale
 
 it :: (HasCallStack, Example a) => String -> a -> SpecWith (Arg a)
-it label action = modifyMaxSuccess (const 100) $ HS.it label action
+it label action = modifyMaxSuccess (const 1000) $ HS.it label action
 
 spec :: Spec
 spec = do
@@ -310,8 +310,6 @@ spec = do
       shrink 2 (BigDecimal 1000 3) `shouldBe` BigDecimal 100 2
     it "does not eliminate more 0s than possible" $
       shrink 0 (BigDecimal 1230 3) `shouldBe` BigDecimal 123 2
-    it "does not change the value of a BigDecimal" $
-      property $ \bd n -> shrink n bd === bd 
 
   describe "matchScales" $
     it "adjusts a pair of BigDecimals to use the same scale" $
@@ -338,8 +336,8 @@ spec = do
       property $ \x n -> let (x', n', r) = (1+ abs x, 1+abs n, nthRoot x' n' (halfUp 10)) in abs (r^n' - x') < BigDecimal (n'*10000) 10
     it "throws an exception if trying to get even root of a negative number" $
       evaluate (nthRoot (-16) 4 $ halfUp 2) `shouldThrow` anyException
-    --it "computes odd roots of any negative BigDecimal" $
-    --  property $ \x n -> let (x', n', r) = ((-1)- abs x, if even n then 1 + abs n else abs n, nthRoot x' n' (halfUp 10)) in abs (r^n' - x') < BigDecimal (n'*10000) 10
+    it "computes odd roots of any negative BigDecimal" $
+      property $ \x n -> let (x', n', r) = ((-1)- abs x, if even n then 1 + abs n else abs n, nthRoot x' n' (halfUp 10)) in abs (r^n' - x') < BigDecimal (n'*10000) 10
 
 
 

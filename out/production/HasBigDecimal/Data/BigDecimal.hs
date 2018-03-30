@@ -187,7 +187,7 @@ sqr x mc
       where
         refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess (initial, 0)
           where
-            withinPrecision (guess, count) = abs (guess^2 - x) < BigDecimal 10 scale || count > 10 * scale * precision x
+            withinPrecision (guess, count) = abs (guess*guess - x) < BigDecimal 10 scale || count > 10 * scale * precision x
             nextGuess (guess, count) = (shrink 0 $ divide (guess + divide (x, guess) mc, 2) mc, count+1)
 
 nthRoot :: BigDecimal -> Integer -> MathContext -> BigDecimal
@@ -199,9 +199,10 @@ nthRoot x n mc@(r,Just s)
       where
         refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess (initial, 0)
           where
-            withinPrecision (guess, count) = abs (guess^n - x) < BigDecimal (n*10) scale || count > 10 * scale * precision x
+            withinPrecision (guess, count) = abs (guess^n - x) < BigDecimal (n*10000) scale || count > 10 * scale * precision x
             nextGuess (guess, count) =
-              (shrink 0 $ divide ((guess * BigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, BigDecimal n 0) mc, count+1)
+              (shrink 0 $ divide ((guess * BigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, BigDecimal n 0) mc,
+               count+1)
 
 
 -- | Compute pi using rounding mode and scale of the specified MathContext
