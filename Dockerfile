@@ -1,31 +1,25 @@
-FROM alpine:latest
-# add FAAS watchdog
-#RUN apk --no-cache add curl \
-#    && echo "Pulling watchdog binary from Github." \
-#    && curl -sSL https://github.com/openfaas/faas/releases/download/0.7.6/fwatchdog > /usr/bin/fwatchdog \
-#    && chmod +x /usr/bin/fwatchdog \
-#    && apk del curl --no-cache
-    
-#RUN apk update && apk add libpq gmp
+# we need a haskell base image to provide basic runtime libs
+FROM fpco/haskell-scratch:integer-gmp
 
-
-#FROM fpco/haskell-scratch:integer-gmp
-FROM ubuntu:17.10
-
-# add FAAS watchdog
-ADD fwatchdog /usr/bin
-RUN chmod +x /usr/bin/fwatchdog
-
-# Make port 8080 available to the world outside this container
-EXPOSE 8080 
-
-# Define your binary here
-ADD ./.stack-work/install/x86_64-linux-nopie/lts-11.2/8.2.2/bin/piServer /usr/bin
+# Define the function binary here
+COPY ./.stack-work/install/x86_64-linux-nopie/lts-11.2/8.2.2/bin/piServer /usr/bin/piServer
+ENV PATH=/usr/bin
 ENV fprocess="piServer"
+
+# add FAAS watchdog
+ADD https://github.com/openfaas/faas/releases/download/0.7.6/fwatchdog  /usr/bin
+
+# sorry for this hack, unfortunately the haskell-scratch images do not contain any tools
+ADD chmod /usr/bin
+RUN chmod +x /usr/bin/fwatchdog
 
 # Set to true to see request in function logs
 ENV write_debug="true"
+# expose port 8080 to the world outside this container
+EXPOSE 8080 
+
+# create /tmp dir
+COPY LICENSE /tmp/.lock
 
 HEALTHCHECK --interval=5s CMD [ -e /tmp/.lock ] || exit 1
-#CMD ["fwatchdog"]
-CMD echo 10 | piServer
+CMD ["fwatchdog"]
