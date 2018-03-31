@@ -23,3 +23,5 @@ cabal.project.local
 
 template
 build
+root
+piServer
