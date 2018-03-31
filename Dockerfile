@@ -1,25 +1,25 @@
-# we need a haskell base image to provide basic runtime libs
-FROM fpco/haskell-scratch:integer-gmp
+# I prefer Alpine over the fpco/haskell-scratch images as it provides more tooling
+FROM alpine:3.7
+
+# copy libs needed by haskell runtime from local root dir
+# run prepare-haskell-libs.sh to generate this directory
+ADD root /
 
 # Define the function binary here
-COPY ./.stack-work/install/x86_64-linux-nopie/lts-11.2/8.2.2/bin/piServer /usr/bin/piServer
-ENV PATH=/usr/bin
+ADD piServer /usr/bin
 ENV fprocess="piServer"
 
 # add FAAS watchdog
 ADD https://github.com/openfaas/faas/releases/download/0.7.6/fwatchdog  /usr/bin
-
-# sorry for this hack, unfortunately the haskell-scratch images do not contain any tools
-ADD chmod /usr/bin
 RUN chmod +x /usr/bin/fwatchdog
 
 # Set to true to see request in function logs
 ENV write_debug="true"
-# expose port 8080 to the world outside this container
+# expose port 8080 to the outside world
 EXPOSE 8080 
 
-# create /tmp dir
-COPY LICENSE /tmp/.lock
-
+# add container healthcheck
 HEALTHCHECK --interval=5s CMD [ -e /tmp/.lock ] || exit 1
+
+# execute faas watchdog
 CMD ["fwatchdog"]
