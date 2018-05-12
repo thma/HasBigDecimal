@@ -1,9 +1,8 @@
-# I prefer Alpine over the fpco/haskell-scratch images as it provides more tooling
-FROM alpine:3.7
+# This Dockerfile defines a OpenFaas compliant function as a service
+# deployment of the piServer Demo.
 
-# copy libs needed by haskell runtime from local root dir
-# run prepare-haskell-libs.sh to generate this directory
-ADD root /
+# I prefer Alpine over the fpco/haskell-scratch images as it provides more tooling
+FROM alpine-haskell
 
 # Define the function binary here
 ADD piServer /usr/bin

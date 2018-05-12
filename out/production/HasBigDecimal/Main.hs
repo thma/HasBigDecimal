@@ -1,11 +1,12 @@
 module Main where
 
 import Data.BigDecimal
-import Text.Read          (readEither)
+import Data.BigFloating
+import Control.Exception
 
 main :: IO ()
 main = do
-    input <- getLine
-    case readEither input of
-      Left ex -> putStrLn $ show ex
-      Right p -> putStrLn $ toString $ piChudnovsky (DOWN, Just p)
+  input <- try readLn :: IO (Either SomeException Integer)
+  case input of
+    Left  _ -> putStrLn "ERROR: please provide an integer to specify how many decimals of pi you want me to compute"
+    Right p -> putStrLn $ toString $ piChudnovsky (DOWN, Just $ abs p)

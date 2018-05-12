@@ -1,6 +1,7 @@
 module Main where
 
 import Data.BigDecimal
+import Data.BigFloating
 import Control.Exception
 
 main :: IO ()
