@@ -1,4 +1,21 @@
-module Data.BigDecimal where
+module Data.BigDecimal
+  ( BigDecimal (..)
+  , RoundingMode (..)
+  , MathContext
+  , getScale
+  , getValue
+  , precision
+  , trim
+  , nf
+  , divide
+  , roundBD
+  , fromRatio
+  , halfUp
+  , fromString
+  , matchScales
+  , toString
+  )
+where
 
 import           Data.List  (find, elemIndex)
 import           Data.Maybe (fromMaybe)
@@ -46,7 +63,7 @@ instance Eq BigDecimal where
 
 instance Fractional BigDecimal where
   -- default division rounds up and does not limit precision
-  a / b = shrink 0 $ divide (matchScales (a, b)) (HALF_UP, Nothing)
+  a / b = nf $ divide (matchScales (a, b)) (HALF_UP, Nothing)
   fromRational ratio@(x :% y) = fromRatio ratio (HALF_UP, Nothing)
 
 fromRatio :: Rational -> MathContext -> BigDecimal
@@ -76,7 +93,7 @@ divide :: (BigDecimal, BigDecimal) -> MathContext -> BigDecimal
 divide (a, b) (rMode, prefScale) =
   let (BigDecimal numA _, BigDecimal numB _) = matchScales (a, b)
       maxPrecision = fromMaybe (precision a + round (fromInteger (precision b) * 10 / 3)) prefScale
-  in shrink maxPrecision (BigDecimal (divUsing rMode (numA * (10 :: Integer) ^ maxPrecision) numB) maxPrecision)
+  in trim maxPrecision (BigDecimal (divUsing rMode (numA * (10 :: Integer) ^ maxPrecision) numB) maxPrecision)
 
 -- | divide two correctly scaled Integers and apply the RoundingMode
 divUsing :: RoundingMode -> Integer -> Integer -> Integer
@@ -115,12 +132,16 @@ precision 0   = 1
 precision (BigDecimal val _)  = 1 + floor (logBase 10 $ abs $ fromInteger val)
 
 -- | removes trailing zeros from a BigDecimals intValue by decreasing the scale
-shrink :: Integer -> BigDecimal -> BigDecimal
-shrink prefScale bd@(BigDecimal val scale) =
+trim :: Integer -> BigDecimal -> BigDecimal
+trim prefScale bd@(BigDecimal val scale) =
   let (v, r) = quotRem val 10
   in if r == 0 && 0 <= prefScale && prefScale < scale
-       then shrink prefScale $ BigDecimal v (scale - 1)
+       then trim prefScale $ BigDecimal v (scale - 1)
        else bd
+
+-- | computes the normal form of a BigDecimal
+nf :: BigDecimal -> BigDecimal
+nf = trim 0
 
 -- | read a BigDecimal from a human readable decimal notation
 fromString :: String -> BigDecimal

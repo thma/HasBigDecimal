@@ -1,12 +1,18 @@
-module Data.BigFloating where
+module Data.BigFloating
+  ( piChudnovsky
+  , sqr
+  , nthRoot
+  )
+where
 
 import           Data.BigDecimal
 import           Data.List  (find)
 import           Data.Maybe (fromMaybe)
 import           GHC.Real   ((%), Ratio ((:%)))
 
+-- I'm giving some implementation ideas for approximisations for functions on transcendental numbers.
+-- The rest is left as an exercise to the interested reader ;-)
 instance Floating BigDecimal where
--- implementation is left as an exercise to the reader ;-)
     pi    = piChudnovsky defaultMC
     exp   = undefined -- e^x
     log   = undefined
@@ -40,7 +46,7 @@ sqr x mc
         refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess (initial, 0)
           where
             withinPrecision (guess, count) = abs (guess^2 - x) < BigDecimal 10 scale || count > 10 * scale * precision x
-            nextGuess (guess, count) = (shrink 0 $ divide (guess + divide (x, guess) mc, 2) mc, count+1)
+            nextGuess (guess, count) = (nf $ divide (guess + divide (x, guess) mc, 2) mc, count+1)
 
 nthRoot :: BigDecimal -> Integer -> MathContext -> BigDecimal
 nthRoot x n mc@(r,Just s)
@@ -53,7 +59,7 @@ nthRoot x n mc@(r,Just s)
           where
             withinPrecision (guess, count) = abs (guess^n - x) < BigDecimal (n*10) scale || count > 10 * scale * precision x
             nextGuess (guess, count) =
-              (shrink 0 $ divide ((guess * BigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, BigDecimal n 0) mc, count+1)
+              (nf $ divide ((guess * BigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, BigDecimal n 0) mc, count+1)
 
 
 -- | Compute pi using rounding mode and scale of the specified MathContext

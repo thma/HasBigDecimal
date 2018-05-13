@@ -31,7 +31,7 @@ test-suite HasBigDecimal-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
-  other-modules:       Data.BigDecimalSpec, Data.BigFloatingSpec
+  other-modules:       Data.BigDecimalSpec, Data.BigFloatingSpec, Data.TestUtils
   build-depends:       base
                      , HasBigDecimal
                      , hspec
