@@ -6,25 +6,14 @@ import           Control.Exception     (evaluate)
 import           Data.BigDecimal
 import           GHC.Real              (Ratio ((:%)))
 import           Test.Hspec            hiding (it)
-import qualified Test.Hspec as HS      (it)
+import           Data.TestUtils        (it)        -- I'm redefining it to use 1000 examples
 import           Test.Hspec.QuickCheck (modifyMaxSize, modifyMaxSuccess)
-import           Test.QuickCheck       hiding (shrink)
+import           Test.QuickCheck
 
 -- `main` is here so that this module can be run from GHCi on its own.  It is
 -- not needed for automatic spec discovery.
 main :: IO ()
 main = hspec spec
-
--- arbitrary BigDecimals can be constructed using any Integer as unscaled value
--- and any non-negative Integer as scale
-instance Arbitrary BigDecimal where
-    arbitrary = do
-      unscaledValue <- arbitrary
-      NonNegative scale <- arbitrary
-      return $ BigDecimal unscaledValue scale
-
-it :: (HasCallStack, Example a) => String -> a -> SpecWith (Arg a)
-it label action = modifyMaxSuccess (const 1000) $ HS.it label action
 
 spec :: Spec
 spec = do
@@ -305,13 +294,13 @@ spec = do
 
   describe "shrink" $ do
     it "removes trailing zeros while taking care of the scale" $
-      shrink 0 (BigDecimal 1000 3) `shouldBe` BigDecimal 1 0
+      nf (BigDecimal 1000 3) `shouldBe` BigDecimal 1 0
     it "does not eliminate more 0s than requested" $
-      shrink 2 (BigDecimal 1000 3) `shouldBe` BigDecimal 100 2
+      trim 2 (BigDecimal 1000 3) `shouldBe` BigDecimal 100 2
     it "does not eliminate more 0s than possible" $
-      shrink 0 (BigDecimal 1230 3) `shouldBe` BigDecimal 123 2
+      nf (BigDecimal 1230 3) `shouldBe` BigDecimal 123 2
     it "does not change the value of a BigDecimal" $
-      property $ \bd n -> shrink n bd === bd 
+      property $ \bd n -> trim n bd === bd
 
   describe "matchScales" $
     it "adjusts a pair of BigDecimals to use the same scale" $

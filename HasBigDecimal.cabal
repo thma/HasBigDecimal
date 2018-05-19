@@ -1,12 +1,13 @@
 name:                HasBigDecimal
-version:             0.1.0.0
--- synopsis:
--- description:
+version:             0.1.1
+synopsis:            A library for arbitrary precision decimal numbers.
+description:         A native Haskell implementation of arbitrary precicion decimal numbers, based on Haskell Integers. Inspired by Java BigDecimals
+
 homepage:            https://github.com/thma/HasBigDecimal#readme
 license:             Apache-2.0
 license-file:        LICENSE
 author:              Thomas Mahler
-maintainer:          thma32@web.de
+maintainer:          thma@apache.org
 copyright:           2018 Thomas Mahler
 category:            Math
 build-type:          Simple
