@@ -1,7 +1,12 @@
 [![Build Status](https://travis-ci.org/thma/HasBigDecimal.svg?branch=master)](https://travis-ci.org/thma/HasBigDecimal)
 
 # HasBigDecimal
-simple implementation of big decimals in Haskell - inspired by Java BigDecimals
+
+This module defines the type 'BigDecimal' which provides a representation of arbitrary precision decimal numbers.
+'BigDecimal' is a native Haskell implementation based on arbitrary sized 'Integer' values.
+The implementation was inspired by Java BigDecimals.
+
+BigDecimal instantiates the typeclasses 'Num', 'Fractional' and 'Real'. It is thus possible to use all common operators like '+', '-', '*', '/', '^' on them.
 
 # Some examples from a ghci REPL
 ```haskell
