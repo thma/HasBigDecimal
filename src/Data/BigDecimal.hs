@@ -127,9 +127,9 @@ plus (a@(BigDecimal valA scaleA), b@(BigDecimal valB scaleB))
 mul :: (BigDecimal, BigDecimal) -> BigDecimal
 mul (BigDecimal valA scaleA, BigDecimal valB scaleB) = BigDecimal (valA * valB) (scaleA + scaleB)
 
--- | divide two BigDecimals and applies the 'MathContext' (i.e. a tupel of 'RoundingMode' and the specified precision) for rounding.
-divide :: (BigDecimal, BigDecimal)  -- ^  the tupel of dividend and divisor. I.e. (dividend, divisor)
-       -> MathContext               -- ^ 'MathContext' (i.e. a tupel of 'RoundingMode' and the specified precision) defines the rounding behaviour.
+-- | divide two BigDecimals and applies the 'MathContext' (i.e. a tuple of 'RoundingMode' and the specified precision) for rounding.
+divide :: (BigDecimal, BigDecimal)  -- ^  the tuple of dividend and divisor. I.e. (dividend, divisor)
+       -> MathContext               -- ^ 'MathContext' (i.e. a tuple of 'RoundingMode' and the specified precision) defines the rounding behaviour.
                                     --   if 'Nothing' if given as precision the maximum possible precision is used.
        -> BigDecimal                -- ^ the resulting BigDecimal
 divide (a, b) (rMode, prefScale) =
