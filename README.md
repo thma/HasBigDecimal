@@ -4,7 +4,7 @@
 simple implementation of big decimals in Haskell - inspired by Java BigDecimals
 
 # Some examples from a ghci REPL
-´´´haskell
+´´´
 λ> a = BigDecimal 144 2
 λ> toString a
 "1.44"
