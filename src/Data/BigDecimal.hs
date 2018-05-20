@@ -1,3 +1,35 @@
+{- | This module defines the type 'BigDecimal' which provides a representation of arbitrary precision decimal numbers.
+     'BigDecimal' is a native Haskell implementation based on arbitrary sized 'Integer' values.
+     The implementation was inspired by Java BigDecimals.
+
+      BigDecimal instantiates the typeclasses 'Num', 'Fractional' and 'Real'. It is thus possible to use all common
+          operators like '+', '-', '*', '/', '^' on them.
+
+       Here are a few examples from an interactive GHCI session:
+
+      >  λ> a = BigDecimal 144 2
+      >  λ> toString a
+      >  "1.44"
+      >  λ> b = sqrt a
+      >  λ> toString b
+      >  "1.2"
+      >  λ> b * b
+      >  BigDecimal 144 2
+      >  λ> b * b * b
+      >  BigDecimal 1728 3
+      >  λ> b^2
+      >  BigDecimal 144 2
+      >  λ> c = fromString "123.4567890"
+      >  λ> c
+      >  BigDecimal 1234567890 7
+      >  λ> a / c
+      >  BigDecimal 1166400010614240096589584878965222398584 41
+      >  λ> roundBD it (halfUp 10)
+      >  BigDecimal 116640001 10
+      >  λ> divide (a, c) $ halfUp 20
+      >  BigDecimal 1166400010614240097 20
+
+-}
 module Data.BigDecimal
   ( BigDecimal (..)
   , RoundingMode (..)
@@ -34,34 +66,11 @@ data RoundingMode
 
 {-| BigDecimal is represented by an unscaled Integer value plus a second Integer value that defines the scale
       E.g.: (BigDecimal 1234 2) represents the decimal value 12.34.
-    BigDecimal instantiates the typeclasses 'Num', 'Fractional' and 'Real'. It is thus possible to use all common
-    operators like '+', '-', '*', '/', '^' on them.
 
- Here are a few examples from an interactive GHCI session:
-
->  λ> a = BigDecimal 144 2
->  λ> toString a
->  "1.44"
->  λ> b = sqrt a
->  λ> toString b
->  "1.2"
->  λ> b * b
->  BigDecimal 144 2
->  λ> b * b * b
->  BigDecimal 1728 3
->  λ> b^2
->  BigDecimal 144 2
->  λ> c = fromString "123.4567890"
->  λ> c
->  BigDecimal 1234567890 7
->  λ> a / c
->  BigDecimal 1166400010614240096589584878965222398584 41
->  λ> roundBD it (halfUp 10)
->  BigDecimal 116640001 10
->  λ> divide (a, c) $ halfUp 20
->  BigDecimal 1166400010614240097 20
 -}
 data BigDecimal =
+  -- | creates a BigDecimal value from an unscaled 'Integer' value and a scale, given as a positive 'Integer'.
+  --   Example: (BigDecimal 1234 2) creates the value 12.34
   BigDecimal Integer Integer
   deriving (Show, Read)
 
@@ -73,7 +82,9 @@ getScale (BigDecimal _ s) = s
 getValue :: BigDecimal -> Integer
 getValue (BigDecimal v _) = v
 
--- | MathContext is a pair of a 'RoundingMode' and a target scale.
+-- | A MathContext is interpreted by divisions and rounding operations to specify the expected loss of precision and the rounding behaviour.
+--   MathContext is a pair of a 'RoundingMode' and a target precision of type 'Maybe' 'Integer'. The precision defines the number of digits after the decimal point.
+--   If 'Nothing' is given as precision all decimal digits are to be preserved, that is precision is not limited.
 type MathContext = (RoundingMode, Maybe Integer)
 
 instance Num BigDecimal where
@@ -116,9 +127,11 @@ plus (a@(BigDecimal valA scaleA), b@(BigDecimal valB scaleB))
 mul :: (BigDecimal, BigDecimal) -> BigDecimal
 mul (BigDecimal valA scaleA, BigDecimal valB scaleB) = BigDecimal (valA * valB) (scaleA + scaleB)
 
--- | divide two BigDecimals with applying the 'MathContext' (i.e. a tupel of 'RoundingMode' and the specified precision
--- | if 'Nothing' if given as precision the maximum possible precision is used
-divide :: (BigDecimal, BigDecimal) -> MathContext -> BigDecimal
+-- | divide two BigDecimals and applies the 'MathContext' (i.e. a tupel of 'RoundingMode' and the specified precision) for rounding.
+divide :: (BigDecimal, BigDecimal)  -- ^  the tupel of dividend and divisor. I.e. (dividend, divisor)
+       -> MathContext               -- ^ 'MathContext' (i.e. a tupel of 'RoundingMode' and the specified precision) defines the rounding behaviour.
+                                    --   if 'Nothing' if given as precision the maximum possible precision is used.
+       -> BigDecimal                -- ^ the resulting BigDecimal
 divide (a, b) (rMode, prefScale) =
   let (BigDecimal numA _, BigDecimal numB _) = matchScales (a, b)
       maxPrecision = fromMaybe (precision a + round (fromInteger (precision b) * 10 / 3)) prefScale
