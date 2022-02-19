@@ -14,6 +14,6 @@ it label action = modifyMaxSuccess (const 1000) $ HS.it label action
 -- and any non-negative Integer as scale
 instance Arbitrary BigDecimal where
     arbitrary = do
-      unscaledValue <- arbitrary
+      unscaledValue     <- arbitrary
       NonNegative scale <- arbitrary
       return $ BigDecimal unscaledValue scale

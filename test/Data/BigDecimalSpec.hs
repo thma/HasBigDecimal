@@ -8,7 +8,7 @@ import           GHC.Real              (Ratio ((:%)))
 import           Test.Hspec            hiding (it)
 import           Data.TestUtils        (it)        -- I'm redefining it to use 1000 examples
 import           Test.Hspec.QuickCheck (modifyMaxSize, modifyMaxSuccess)
-import           Test.QuickCheck
+import Test.QuickCheck ( Testable(property), (===) )
 
 -- `main` is here so that this module can be run from GHCi on its own.  It is
 -- not needed for automatic spec discovery.
@@ -35,13 +35,13 @@ spec = do
 
   describe "read" $ do
     it "reads BigDecimals from strings in constructor notation" $
-      read "BigDecimal 76878 5" `shouldBe` BigDecimal 76878 5
+      read "0.76878" `shouldBe` BigDecimal 76878 5
     it "is inverse of show" $
       property $ \bd -> (read . show) bd === (bd :: BigDecimal)
 
   describe "show" $ do
     it "converts BigDecimals to strings in constructor notation" $
-      show (BigDecimal 76878 5) `shouldBe` "BigDecimal 76878 5"
+      show (BigDecimal 76878 5) `shouldBe` "0.76878"
     it "is inverse of read" $
       property $ \bd -> (read . show) bd === (bd :: BigDecimal)
 
@@ -53,11 +53,11 @@ spec = do
     it "adds x to (-x) yielding 0" $
       property $ \bd -> bd + (-bd) === (0 :: BigDecimal)
     it "uses the max scale of the summands" $
-      property $ \ai as bi bs -> max as bs === getScale (BigDecimal ai as + BigDecimal bi bs)
+      property $ \ai as bi bs -> max as bs === scale (BigDecimal ai as + BigDecimal bi bs)
     it "uses Integer addition when summands have same scale" $
-      property $ \ai bi scale -> ai + bi === getValue (BigDecimal ai scale + BigDecimal bi scale)
+      property $ \ai bi scale -> ai + bi === value (BigDecimal ai scale + BigDecimal bi scale)
     it "matches values when scaling" $
-      property $ \ai bi scale -> getValue (BigDecimal ai scale + BigDecimal bi (scale+1)) === 10*ai + bi
+      property $ \ai bi scale -> value (BigDecimal ai scale + BigDecimal bi (scale+1)) === 10*ai + bi
 
   describe "(*)" $ do
     it "multiplies BigDecimals" $
@@ -79,7 +79,7 @@ spec = do
     it "is based on abs for Integers" $
       property $ \ai as -> abs (BigDecimal ai as) === BigDecimal (abs ai) as
     it "negates for input < 0" $
-      property $ \bd -> abs bd === if getValue bd < 0 then negate bd else bd
+      property $ \bd -> abs bd === if value bd < 0 then negate bd else bd
 
   describe "signum" $ do
     it "determines the signature a BigDecimal" $
@@ -304,7 +304,7 @@ spec = do
 
   describe "matchScales" $
     it "adjusts a pair of BigDecimals to use the same scale" $
-      property $ \x y -> let (x', y') = matchScales (x,y) in getScale x' === getScale y'
+      property $ \x y -> let (x', y') = matchScales (x,y) in scale x' === scale y'
 
   describe "roundBD" $ do
     it "rounds a BigDecimal " $

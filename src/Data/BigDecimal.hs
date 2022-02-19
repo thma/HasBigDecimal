@@ -9,33 +9,31 @@
 
       >  λ> a = BigDecimal 144 2
       >  λ> toString a
-      >  "1.44"
+      >  1.44
       >  λ> b = sqrt a
-      >  λ> toString b
-      >  "1.2"
+      >  λ> b
+      >  1.2
       >  λ> b * b
-      >  BigDecimal 144 2
+      >  1.44
       >  λ> b * b * b
-      >  BigDecimal 1728 3
+      >  1.728
       >  λ> b^2
-      >  BigDecimal 144 2
-      >  λ> c = fromString "123.4567890"
+      >  1.44
+      >  λ> c = read "123.4567890" :: BigDecimal
       >  λ> c
-      >  BigDecimal 1234567890 7
+      >  123.4567890
       >  λ> a / c
-      >  BigDecimal 1166400010614240096589584878965222398584 41
+      >  0.01166400010614240096589584878965222398584
       >  λ> roundBD it (halfUp 10)
-      >  BigDecimal 116640001 10
+      >  0.0116640001
       >  λ> divide (a, c) $ halfUp 20
-      >  BigDecimal 1166400010614240097 20
+      >  0.01166400010614240097
 
 -}
 module Data.BigDecimal
   ( BigDecimal (..)
   , RoundingMode (..)
   , MathContext
-  , getScale
-  , getValue
   , precision
   , trim
   , nf
@@ -50,8 +48,21 @@ module Data.BigDecimal
 where
 
 import           Data.List  (find, elemIndex)
-import           Data.Maybe (fromMaybe)
+import           Data.Maybe (fromMaybe, fromJust)
 import           GHC.Real   ((%), Ratio ((:%)))
+import Text.Read (readMaybe)
+
+-- | BigDecimal is represented by an unscaled Integer value plus a second Integer value that defines the scale
+--   E.g.: (BigDecimal 1234 2) represents the decimal value 12.34.
+data BigDecimal =
+  -- | creates a BigDecimal value from an unscaled 'Integer' value and a scale, given as a positive 'Integer'.
+  --   Example: (BigDecimal 1234 2) creates the value 12.34
+  BigDecimal {value :: Integer, scale :: Integer}
+
+-- | A MathContext is interpreted by divisions and rounding operations to specify the expected loss of precision and the rounding behaviour.
+--   MathContext is a pair of a 'RoundingMode' and a target precision of type 'Maybe' 'Integer'. The precision defines the number of digits after the decimal point.
+--   If 'Nothing' is given as precision all decimal digits are to be preserved, that is precision is not limited.
+type MathContext = (RoundingMode, Maybe Integer)
 
 -- | RoundingMode defines how to handle loss of precision in divisions or explicit rounding.
 data RoundingMode
@@ -64,29 +75,15 @@ data RoundingMode
   | HALF_EVEN -- ^ Rounding mode to round towards "nearest neighbor" unless both neighbors are equidistant, in which case, round towards the even neighbor.
   | PRECISE   -- ^ Rounding mode to assert that the requested operation has an exact result, hence no rounding is applied.
 
-{-| BigDecimal is represented by an unscaled Integer value plus a second Integer value that defines the scale
-      E.g.: (BigDecimal 1234 2) represents the decimal value 12.34.
+instance Show BigDecimal where
+  show bd = toString bd
 
--}
-data BigDecimal =
-  -- | creates a BigDecimal value from an unscaled 'Integer' value and a scale, given as a positive 'Integer'.
-  --   Example: (BigDecimal 1234 2) creates the value 12.34
-  BigDecimal Integer Integer
-  deriving (Show, Read)
-
--- | gets the scale part of a BigDecimal
-getScale :: BigDecimal -> Integer
-getScale (BigDecimal _ s) = s
-
--- | get the unscaled value of a BigDecimal
-getValue :: BigDecimal -> Integer
-getValue (BigDecimal v _) = v
-
--- | A MathContext is interpreted by divisions and rounding operations to specify the expected loss of precision and the rounding behaviour.
---   MathContext is a pair of a 'RoundingMode' and a target precision of type 'Maybe' 'Integer'. The precision defines the number of digits after the decimal point.
---   If 'Nothing' is given as precision all decimal digits are to be preserved, that is precision is not limited.
-type MathContext = (RoundingMode, Maybe Integer)
-
+instance Read BigDecimal where
+  readsPrec _ str = 
+    case fromStringMaybe str of
+      Nothing   -> []
+      (Just bd) -> [(bd, "")]
+ 
 instance Num BigDecimal where
   a + b                   = plus (a, b)
   a * b                   = mul (a, b)
@@ -160,6 +157,7 @@ roundBD :: BigDecimal -> MathContext -> BigDecimal
 roundBD bd@(BigDecimal val scale) mc@(rMode, Just n)
   | n < 0 || n >= scale = bd
   | otherwise           = BigDecimal (divUsing rMode val (10 ^ (scale-n))) n
+roundBD bd _ = bd
 
 -- | match the scales of a tuple of BigDecimals
 matchScales :: (BigDecimal, BigDecimal) -> (BigDecimal, BigDecimal)
@@ -188,12 +186,19 @@ nf = trim 0
 -- | read a BigDecimal from a human readable decimal notation.
 --   e.g. @ fromString "3.14" @ yields 'BigDecimal 314 2'
 fromString :: String -> BigDecimal
-fromString s =
-  let maybeIndex = elemIndex '.' s
-      intValue   = read (filter (/= '.') s) :: Integer
-  in case maybeIndex of
-       Nothing -> BigDecimal intValue 0
-       Just i  -> BigDecimal intValue $ toInteger (length s - i - 1)
+fromString = fromJust . fromStringMaybe
+
+-- | read a BigDecimal from a human readable decimal notation.
+--   e.g. @ fromString "3.14" @ yields 'BigDecimal 314 2'
+fromStringMaybe :: String -> Maybe BigDecimal
+fromStringMaybe s =
+  let maybeIndex    = elemIndex '.' s
+      maybeIntValue = readMaybe (filter (/= '.') s)
+  in do
+    intValue <- maybeIntValue
+    case maybeIndex of
+       Nothing -> pure $ BigDecimal intValue 0
+       Just i  -> pure $ BigDecimal intValue $ toInteger (length s - i - 1)
 
 -- | returns a readable String representation of a BigDecimal
 --   e.g. @ toString (BigDecimal 314 2) @ yields "3.14"
