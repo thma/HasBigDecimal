@@ -45,7 +45,7 @@ sqr x mc
       where
         refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess (initial, 0)
           where
-            withinPrecision (guess, count) = abs (guess^2 - x) < BigDecimal 10 scale || count > 10 * scale * precision x
+            withinPrecision (guess, count) = abs (guess^2 - x) < bigDecimal 10 scale || count > 10 * scale * (fromIntegral $ precision x)
             nextGuess (guess, count) = (nf $ divide (guess + divide (x, guess) mc, 2) mc, count+1)
 
 nthRoot :: BigDecimal -> Integer -> MathContext -> BigDecimal
@@ -57,9 +57,9 @@ nthRoot x n mc@(r,Just s)
       where
         refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess (initial, 0)
           where
-            withinPrecision (guess, count) = abs (guess^n - x) < BigDecimal (n*10) scale || count > 10 * scale * precision x
+            withinPrecision (guess, count) = abs (guess^n - x) < bigDecimal (n*10) scale || count > 10 * scale * precision x
             nextGuess (guess, count) =
-              (nf $ divide ((guess * BigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, BigDecimal n 0) mc, count+1)
+              (nf $ divide ((guess * bigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, bigDecimal n 0) mc, count+1)
 
 
 -- | Compute pi using rounding mode and scale of the specified MathContext
@@ -69,7 +69,7 @@ piChudnovsky mc@(rMode, Just scale) = divide (1, 12 * divide (fromRatio s mc,f) 
     where
       mc'   = (rMode, Just $ scale + 3) -- increase precision to avoid propagation of rounding errors
       steps = 1 + div scale  14         -- taken from github.com/eobermuhlner/big-math
-      s = sum [chudnovsky n | n <- [0..steps]] :: Rational
+      s = sum [chudnovsky (fromIntegral n) | n <- [0..steps]] :: Rational
       f = sqr (fromInteger c^3) mc      -- Common factor in the sum
 
       -- k-th term of the Chudnovsky series

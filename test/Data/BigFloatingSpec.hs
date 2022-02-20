@@ -22,14 +22,14 @@ spec = do
   -- mathematical functions on BigDecimals
   describe "sqr" $ do
     it "computes the square root of any non-negative BigDecimal" $
-      property $ \x scale -> let (x', r) = (abs x, sqr x' $ halfUp scale) in abs (r*r - x') < BigDecimal 1000 scale
+      property $ \x scale -> let (x', r) = (abs x, sqr x' $ halfUp scale) in abs (r*r - x') < bigDecimal 1000 scale
     it "throws an exception if applied to a negative number" $
       evaluate (sqr (-16) $ halfUp 2) `shouldThrow` anyException
 
   -- mathematical functions on BigDecimals
   describe "nthRoot" $ do
     it "computes the nth root of any non-negative BigDecimal" $
-      property $ \x n -> let (x', n', r) = (1+ abs x, 1+abs n, nthRoot x' n' (halfUp 10)) in abs (r^n' - x') < BigDecimal (n'*10000) 10
+      property $ \x n -> let (x', n', r) = (1+ abs x, 1+abs n, nthRoot x' n' (halfUp 10)) in abs (r^n' - x') < bigDecimal (n'*10000) 10
     it "throws an exception if trying to get even root of a negative number" $
       evaluate (nthRoot (-16) 4 $ halfUp 2) `shouldThrow` anyException
     --it "computes odd roots of any negative BigDecimal" $

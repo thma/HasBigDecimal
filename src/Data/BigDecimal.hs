@@ -31,9 +31,12 @@
 
 -}
 module Data.BigDecimal
-  ( BigDecimal (..)
+  ( BigDecimal
   , RoundingMode (..)
   , MathContext
+  , bigDecimal
+  , value
+  , scale
   , precision
   , trim
   , nf
@@ -50,19 +53,24 @@ where
 import           Data.List  (find, elemIndex)
 import           Data.Maybe (fromMaybe, fromJust)
 import           GHC.Real   ((%), Ratio ((:%)))
-import Text.Read (readMaybe)
+import           Text.Read (readMaybe)
+import           GHC.Natural (Natural)
 
--- | BigDecimal is represented by an unscaled Integer value plus a second Integer value that defines the scale
+-- | BigDecimal is represented by an unscaled Integer value and a Natural that defines the scale
 --   E.g.: (BigDecimal 1234 2) represents the decimal value 12.34.
-data BigDecimal =
-  -- | creates a BigDecimal value from an unscaled 'Integer' value and a scale, given as a positive 'Integer'.
-  --   Example: (BigDecimal 1234 2) creates the value 12.34
-  BigDecimal {value :: Integer, scale :: Integer}
+data BigDecimal = BigDecimal {
+      value :: Integer  -- ^ the unscaled Integer value
+    , scale :: Natural  -- ^ the scale (i.e. the number of digits after the decimal point)
+    }
+
+-- | smart constructor for BigDecimal
+bigDecimal :: Integer -> Natural -> BigDecimal
+bigDecimal = BigDecimal
 
 -- | A MathContext is interpreted by divisions and rounding operations to specify the expected loss of precision and the rounding behaviour.
---   MathContext is a pair of a 'RoundingMode' and a target precision of type 'Maybe' 'Integer'. The precision defines the number of digits after the decimal point.
+--   MathContext is a pair of a 'RoundingMode' and a target precision of type 'Maybe' 'Natural'. The precision defines the number of digits after the decimal point.
 --   If 'Nothing' is given as precision all decimal digits are to be preserved, that is precision is not limited.
-type MathContext = (RoundingMode, Maybe Integer)
+type MathContext = (RoundingMode, Maybe Natural)
 
 -- | RoundingMode defines how to handle loss of precision in divisions or explicit rounding.
 data RoundingMode
@@ -79,11 +87,11 @@ instance Show BigDecimal where
   show bd = toString bd
 
 instance Read BigDecimal where
-  readsPrec _ str = 
+  readsPrec _ str =
     case fromStringMaybe str of
       Nothing   -> []
       (Just bd) -> [(bd, "")]
- 
+
 instance Num BigDecimal where
   a + b                   = plus (a, b)
   a * b                   = mul (a, b)
@@ -107,7 +115,7 @@ fromRatio :: Rational -> MathContext -> BigDecimal
 fromRatio (x :% y) = divide (fromInteger x, fromInteger y)
 
 instance Real BigDecimal where
-  toRational (BigDecimal val scale) = toRational val * 10^^(-scale)
+  toRational (BigDecimal val scale) = toRational val * 10^^(- fromNatural scale)
 
 instance Ord BigDecimal where
   compare a b =
@@ -131,7 +139,7 @@ divide :: (BigDecimal, BigDecimal)  -- ^  the tuple of dividend and divisor. I.e
        -> BigDecimal                -- ^ the resulting BigDecimal
 divide (a, b) (rMode, prefScale) =
   let (BigDecimal numA _, BigDecimal numB _) = matchScales (a, b)
-      maxPrecision = fromMaybe (precision a + round (fromInteger (precision b) * 10 / 3)) prefScale
+      maxPrecision = fromMaybe (precision a + round (fromIntegral (precision b) * 10 / 3)) prefScale :: Natural
   in trim maxPrecision (BigDecimal (divUsing rMode (numA * (10 :: Integer) ^ maxPrecision) numB) maxPrecision)
 
 -- | divide two correctly scaled Integers and apply the RoundingMode
@@ -166,13 +174,13 @@ matchScales (a@(BigDecimal integerA scaleA), b@(BigDecimal integerB scaleB))
   | scaleA > scaleB = (a, BigDecimal (integerB * 10 ^ (scaleA - scaleB)) scaleA)
   | otherwise       = (a, b)
 
--- | returns the number of digits of an Integer
-precision :: BigDecimal -> Integer
+-- | returns the number of digits of a BigDecimal
+precision :: BigDecimal -> Natural
 precision 0                  = 1
 precision (BigDecimal val _) = 1 + floor (logBase 10 $ abs $ fromInteger val)
 
 -- | removes trailing zeros from a BigDecimals intValue by decreasing the scale
-trim :: Integer -> BigDecimal -> BigDecimal
+trim :: Natural -> BigDecimal -> BigDecimal
 trim prefScale bd@(BigDecimal val scale) =
   let (v, r) = quotRem val 10
   in if r == 0 && 0 <= prefScale && prefScale < scale
@@ -198,7 +206,7 @@ fromStringMaybe s =
     intValue <- maybeIntValue
     case maybeIndex of
        Nothing -> pure $ BigDecimal intValue 0
-       Just i  -> pure $ BigDecimal intValue $ toInteger (length s - i - 1)
+       Just i  -> pure $ BigDecimal intValue (fromIntegral (length s - i - 1))
 
 -- | returns a readable String representation of a BigDecimal
 --   e.g. @ toString (BigDecimal 314 2) @ yields "3.14"
@@ -206,14 +214,18 @@ toString :: BigDecimal -> String
 toString bd@(BigDecimal intValue scale) =
   let s = show $ abs intValue
       filled =
-        if fromInteger scale >= length s
-          then replicate (1 + fromInteger scale - length s) '0' ++ s
+        if fromNatural scale >= length s
+          then replicate (1 + fromNatural scale - length s) '0' ++ s
           else s
-      splitPos = length filled - fromInteger scale
+      splitPos = length filled - fromNatural scale
       (ints, decimals) = splitAt splitPos filled
       sign = if intValue < 0 then "-" else ""
   in sign ++ if not (null decimals) then ints ++ "." ++ decimals else ints
 
 -- | construct a 'MathContext' for rounding 'HALF_UP' with 'scale' decimal digits
-halfUp :: Integer -> MathContext
+halfUp :: Natural -> MathContext
 halfUp scale = (HALF_UP, Just scale)
+
+-- | convert a Natural to any numeric type a
+fromNatural :: Num a => Natural -> a
+fromNatural = fromInteger . toInteger

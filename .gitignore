@@ -25,3 +25,4 @@ template
 build
 root
 piServer
+tasks.json
