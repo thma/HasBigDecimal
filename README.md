@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/thma/HasBigDecimal.svg?branch=master)](https://travis-ci.org/thma/HasBigDecimal)
+[![Actions Status](https://github.com/thma/HasBigDecimal/workflows/Haskell-CI/badge.svg)](https://github.com/thma/HasBigDecimal/actions)
 
 # HasBigDecimal
 
