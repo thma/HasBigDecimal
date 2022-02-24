@@ -5,7 +5,7 @@ module Data.BigFloating
   )
 where
 
-import Data.BigDecimal
+import           Data.BigDecimal
 import           Data.List  (find)
 import           Data.Maybe (fromMaybe)
 import           GHC.Real   ((%), Ratio ((:%)))
