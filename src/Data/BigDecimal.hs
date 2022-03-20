@@ -31,12 +31,9 @@
 
 -}
 module Data.BigDecimal
-  ( BigDecimal
+  ( BigDecimal (..)
   , RoundingMode (..)
-  , MathContext
-  , bigDecimal
-  , value
-  , scale
+  , RoundingAdvice
   , precision
   , trim
   , nf
@@ -45,6 +42,7 @@ module Data.BigDecimal
   , fromRatio
   , halfUp
   , fromString
+  , fromStringMaybe
   , matchScales
   , toString
   )
@@ -63,14 +61,10 @@ data BigDecimal = BigDecimal {
     , scale :: Natural  -- ^ the scale (i.e. the number of digits after the decimal point)
     }
 
--- | smart constructor for BigDecimal
-bigDecimal :: Integer -> Natural -> BigDecimal
-bigDecimal = BigDecimal
-
--- | A MathContext is interpreted by divisions and rounding operations to specify the expected loss of precision and the rounding behaviour.
---   MathContext is a pair of a 'RoundingMode' and a target precision of type 'Maybe' 'Natural'. The precision defines the number of digits after the decimal point.
+-- | A RoundingAdvice is interpreted by divisions and rounding operations to specify the expected loss of precision and the rounding behaviour.
+--   RoundingAdvice is a pair of a 'RoundingMode' and a target precision of type 'Maybe' 'Natural'. The precision defines the number of digits after the decimal point.
 --   If 'Nothing' is given as precision all decimal digits are to be preserved, that is precision is not limited.
-type MathContext = (RoundingMode, Maybe Natural)
+type RoundingAdvice = (RoundingMode, Maybe Natural)
 
 -- | RoundingMode defines how to handle loss of precision in divisions or explicit rounding.
 data RoundingMode
@@ -110,8 +104,8 @@ instance Fractional BigDecimal where
   a / b = nf $ divide (matchScales (a, b)) (HALF_UP, Nothing)
   fromRational ratio@(x :% y) = fromRatio ratio (HALF_UP, Nothing)
 
--- | creates a BigDecimal from a 'Rational' value. 'MathContext' defines precision and rounding mode.
-fromRatio :: Rational -> MathContext -> BigDecimal
+-- | creates a BigDecimal from a 'Rational' value. 'RoundingAdvice' defines precision and rounding mode.
+fromRatio :: Rational -> RoundingAdvice -> BigDecimal
 fromRatio (x :% y) = divide (fromInteger x, fromInteger y)
 
 instance Real BigDecimal where
@@ -132,9 +126,9 @@ plus (a@(BigDecimal valA scaleA), b@(BigDecimal valB scaleB))
 mul :: (BigDecimal, BigDecimal) -> BigDecimal
 mul (BigDecimal valA scaleA, BigDecimal valB scaleB) = BigDecimal (valA * valB) (scaleA + scaleB)
 
--- | divide two BigDecimals and applies the 'MathContext' (i.e. a tuple of 'RoundingMode' and the specified precision) for rounding.
+-- | divide two BigDecimals and applies the 'RoundingAdvice' (i.e. a tuple of 'RoundingMode' and the specified precision) for rounding.
 divide :: (BigDecimal, BigDecimal)  -- ^  the tuple of dividend and divisor. I.e. (dividend, divisor)
-       -> MathContext               -- ^ 'MathContext' (i.e. a tuple of 'RoundingMode' and the specified precision) defines the rounding behaviour.
+       -> RoundingAdvice            -- ^ 'RoundingAdvice' (i.e. a tuple of 'RoundingMode' and the specified precision) defines the rounding behaviour.
                                     --   if 'Nothing' if given as precision the maximum possible precision is used.
        -> BigDecimal                -- ^ the resulting BigDecimal
 divide (a, b) (rMode, prefScale) =
@@ -160,9 +154,9 @@ divUsing rounding a b =
          | delta == 0 && odd quot -> quot + signum quot
          | otherwise              -> quot
 
--- | round a BigDecimal to 'n' digits applying the 'MathContext' 'mc'
-roundBD :: BigDecimal -> MathContext -> BigDecimal
-roundBD bd@(BigDecimal val scale) mc@(rMode, Just n)
+-- | round a BigDecimal according to a 'RoundingAdvice' to 'n' digits applying the 'RoundingMode' 'rMode'
+roundBD :: BigDecimal -> RoundingAdvice -> BigDecimal
+roundBD bd@(BigDecimal val scale) (rMode, Just n)
   | n < 0 || n >= scale = bd
   | otherwise           = BigDecimal (divUsing rMode val (10 ^ (scale-n))) n
 roundBD bd _ = bd
@@ -222,8 +216,8 @@ toString bd@(BigDecimal intValue scale) =
       sign = if intValue < 0 then "-" else ""
   in sign ++ if not (null decimals) then ints ++ "." ++ decimals else ints
 
--- | construct a 'MathContext' for rounding 'HALF_UP' with 'scale' decimal digits
-halfUp :: Natural -> MathContext
+-- | construct a 'RoundingAdvice' for rounding 'HALF_UP' with 'scale' decimal digits
+halfUp :: Natural -> RoundingAdvice
 halfUp scale = (HALF_UP, Just scale)
 
 -- | convert a Natural to any numeric type a

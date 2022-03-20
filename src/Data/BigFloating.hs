@@ -7,13 +7,14 @@ where
 
 import           Data.BigDecimal
 import           Data.List  (find)
-import           Data.Maybe (fromMaybe)
+import           Data.Maybe (fromMaybe, fromJust)
 import           GHC.Real   ((%), Ratio ((:%)))
+import GHC.Natural
 
 -- I'm giving some implementation ideas for approximisations for functions on transcendental numbers.
 -- The rest is left as an exercise to the interested reader ;-)
 instance Floating BigDecimal where
-    pi    = piChudnovsky defaultMC
+    pi    = piChudnovsky defaultRounding
     exp   = undefined -- e^x
     log   = undefined
     sin   = undefined
@@ -28,16 +29,17 @@ instance Floating BigDecimal where
     atanh = undefined
 
 -- not required for minimal implementation
-    sqrt x = sqr x defaultMC
-    x ** y = nthRoot (x^b) n defaultMC
+    sqrt x = sqr x defaultRounding
+    x ** y = nthRoot (x^b) (fromIntegral n) defaultRounding
                 where
                   (b :% n) = toRational y
 
-defaultMC = (DOWN, Just 100)
+defaultRounding :: RoundingAdvice
+defaultRounding = (DOWN, Just 100)
 
--- | computes the square root of any non-negative BigDecimal, rounding and precision defined by MathContext.
+-- | computes the square root of any non-negative BigDecimal, rounding and precision defined by RoundingAdvice.
 --   We are using Newton's algorithm.
-sqr :: BigDecimal -> MathContext -> BigDecimal
+sqr :: BigDecimal -> RoundingAdvice -> BigDecimal
 sqr x mc
   | x <  0    = error "can't determine the square root of negative numbers"
   | x == 0    = 0
@@ -45,26 +47,27 @@ sqr x mc
       where
         refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess (initial, 0)
           where
-            withinPrecision (guess, count) = abs (guess^2 - x) < bigDecimal 10 scale || count > 10 * scale * (fromIntegral $ precision x)
+            withinPrecision (guess, count) = abs (guess^2 - x) < BigDecimal 10 scale || count > 10 * scale * (fromIntegral $ precision x)
             nextGuess (guess, count) = (nf $ divide (guess + divide (x, guess) mc, 2) mc, count+1)
 
-nthRoot :: BigDecimal -> Integer -> MathContext -> BigDecimal
-nthRoot x n mc@(r,Just s)
+nthRoot :: BigDecimal -> Natural -> RoundingAdvice -> BigDecimal
+nthRoot x n mc@(r, maybeScale)
   | x <  0 && even n   = error "can't determine even roots of negative numbers"
   | x <  0 && odd  n   = - nthRoot x (-n) mc
   | x == 0    = 0
   | otherwise = roundBD (fst (fromMaybe (error "did not find a sqrt") $ refine x 1 (r, Just (s+4)))) mc
       where
+        s  = fromJust maybeScale
         refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess (initial, 0)
           where
-            withinPrecision (guess, count) = abs (guess^n - x) < bigDecimal (n*10) scale || count > 10 * scale * precision x
+            withinPrecision (guess, count) = abs (guess^n - x) < BigDecimal (fromIntegral $ n*10) scale || count > 10 * scale * precision x
             nextGuess (guess, count) =
-              (nf $ divide ((guess * bigDecimal (n-1) 0) + divide (x, guess^(n-1)) mc, bigDecimal n 0) mc, count+1)
+              (nf $ divide ((guess * BigDecimal (fromIntegral $ n-1) 0) + divide (x, guess^(n-1)) mc, BigDecimal (fromIntegral n) 0) mc, count+1)
 
 
--- | Compute pi using rounding mode and scale of the specified MathContext
+-- | Compute pi using rounding mode and scale of the specified RoundingAdvice
 --   Sources: https://wiki.haskell.org/Integers_too_big_for_floats & https://github.com/eobermuhlner/big-math
-piChudnovsky :: MathContext -> BigDecimal
+piChudnovsky :: RoundingAdvice -> BigDecimal
 piChudnovsky mc@(rMode, Just scale) = divide (1, 12 * divide (fromRatio s mc,f) mc') mc
     where
       mc'   = (rMode, Just $ scale + 3) -- increase precision to avoid propagation of rounding errors

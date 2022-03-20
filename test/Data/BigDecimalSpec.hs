@@ -19,15 +19,15 @@ spec :: Spec
 spec = do
   describe "toBD" $ do
     it "reads BigDecimals from strings" $
-      fromString "-145.123" `shouldBe` bigDecimal (-145123) 3
+      fromString "-145.123" `shouldBe` BigDecimal (-145123) 3
     it "is inverse of toString" $
       property $ \bd -> (fromString . toString) bd === (bd :: BigDecimal)
 
   describe "toString" $ do
     it "converts BigDecimals to string" $
-      toString (bigDecimal (-145123) 3) `shouldBe` "-145.123"
+      toString (BigDecimal (-145123) 3) `shouldBe` "-145.123"
     it "adds leading 0s if required" $
-      toString (bigDecimal (-14) 10) `shouldBe` "-0.0000000014"
+      toString (BigDecimal (-14) 10) `shouldBe` "-0.0000000014"
     it "can handle integer values" $
       toString 10 `shouldBe` "10"
     it "is inverse of toBD" $
@@ -35,69 +35,69 @@ spec = do
 
   describe "read" $ do
     it "reads BigDecimals from strings in constructor notation" $
-      read "0.76878" `shouldBe` bigDecimal 76878 5
+      read "0.76878" `shouldBe` BigDecimal 76878 5
     it "is inverse of show" $
       property $ \bd -> (read . show) bd === (bd :: BigDecimal)
 
   describe "show" $ do
     it "converts BigDecimals to strings in constructor notation" $
-      show (bigDecimal 76878 5) `shouldBe` "0.76878"
+      show (BigDecimal 76878 5) `shouldBe` "0.76878"
     it "is inverse of read" $
       property $ \bd -> (read . show) bd === (bd :: BigDecimal)
 
   describe "(+)" $ do
     it "adds two BigDecimals" $
-      bigDecimal 73 1 + bigDecimal 270 2 `shouldBe` bigDecimal 1000 2
+      BigDecimal 73 1 + BigDecimal 270 2 `shouldBe` BigDecimal 1000 2
     modifyMaxSuccess (const 1000) $ it "has 0 as neutral element" $
       property $ \bd -> bd + 0 === (bd :: BigDecimal)
     it "adds x to (-x) yielding 0" $
       property $ \bd -> bd + (-bd) === (0 :: BigDecimal)
     it "uses the max scale of the summands" $
-      property $ \ai as bi bs -> max as bs === (scale (bigDecimal ai as + bigDecimal bi bs))
+      property $ \ai as bi bs -> max as bs === (scale (BigDecimal ai as + BigDecimal bi bs))
     it "uses Integer addition when summands have same scale" $
-      property $ \ai bi scale -> ai + bi === value (bigDecimal ai scale + bigDecimal bi scale)
+      property $ \ai bi scale -> ai + bi === value (BigDecimal ai scale + BigDecimal bi scale)
     it "matches values when scaling" $
-      property $ \ai bi scale -> value (bigDecimal ai scale + bigDecimal bi (scale+1)) === 10*ai + bi
+      property $ \ai bi scale -> value (BigDecimal ai scale + BigDecimal bi (scale+1)) === 10*ai + bi
 
   describe "(*)" $ do
     it "multiplies BigDecimals" $
-      bigDecimal 12 1 * bigDecimal 12 2 `shouldBe` bigDecimal 144 3
+      BigDecimal 12 1 * BigDecimal 12 2 `shouldBe` BigDecimal 144 3
     it "has 1 as neutral element" $
       property $ \bd -> bd * 1 === (bd :: BigDecimal)
     it "has 0 as zero element" $
       property $ \bd -> bd * 0 === (0 :: BigDecimal)
     it "Uses Integer multiplication" $
-      property $ \ai as bi -> bigDecimal ai as * bigDecimal bi 0 === bigDecimal (ai*bi) as
+      property $ \ai as bi -> BigDecimal ai as * BigDecimal bi 0 === BigDecimal (ai*bi) as
     it "adds the scales of the multiplicands" $
-      property $ \ai as bi bs -> bigDecimal ai as * bigDecimal bi bs === bigDecimal (ai*bi) (as+bs)
+      property $ \ai as bi bs -> BigDecimal ai as * BigDecimal bi bs === BigDecimal (ai*bi) (as+bs)
 
   describe "abs" $ do
     it "determines the absolute value of a BigDecimal" $
-      abs (bigDecimal (-12) 4)  `shouldBe` bigDecimal 12 4
+      abs (BigDecimal (-12) 4)  `shouldBe` BigDecimal 12 4
     it "is idempotent" $
       property $ \bd -> (abs . abs) bd === (abs bd :: BigDecimal)
     it "is based on abs for Integers" $
-      property $ \ai as -> abs (bigDecimal ai as) === bigDecimal (abs ai) as
+      property $ \ai as -> abs (BigDecimal ai as) === BigDecimal (abs ai) as
     it "negates for input < 0" $
       property $ \bd -> abs bd === if value bd < 0 then negate bd else bd
 
   describe "signum" $ do
     it "determines the signature a BigDecimal" $
-      signum (bigDecimal (-12) 4)  `shouldBe` -1
+      signum (BigDecimal (-12) 4)  `shouldBe` -1
     it "returns 1 if input > 0, zero if input == 0 and -1 if input < 0" $
-      property $ \ai as -> signum (bigDecimal ai as) === if ai > 0 then 1 else if ai == 0 then 0 else -1
+      property $ \ai as -> signum (BigDecimal ai as) === if ai > 0 then 1 else if ai == 0 then 0 else -1
     it "is based on signum for Integers" $
-      property $ \ai as -> signum (bigDecimal ai as) === bigDecimal (signum ai) 0
+      property $ \ai as -> signum (BigDecimal ai as) === BigDecimal (signum ai) 0
 
   describe "fromInteger" $ do
-    it "constructs a bigDecimal from an Integer" $
-      1234  `shouldBe` bigDecimal 1234 0
+    it "constructs a BigDecimal from an Integer" $
+      1234  `shouldBe` BigDecimal 1234 0
     it "works for any Integer" $
-      property $ \i -> fromInteger i === bigDecimal i 0
+      property $ \i -> fromInteger i === BigDecimal i 0
 
   describe "negate" $ do
     it "negates a BigDecimal" $
-      negate (bigDecimal 1234 1)  `shouldBe` -bigDecimal 1234 1
+      negate (BigDecimal 1234 1)  `shouldBe` -BigDecimal 1234 1
     it "works for any BigDecimal" $
       property $ \bd -> negate bd === (-bd :: BigDecimal)
     it "is the same as *(-1)" $
@@ -107,7 +107,7 @@ spec = do
 
   describe "(/)" $ do
     it "divides two BigDecimals" $
-      bigDecimal 16 1 / bigDecimal 4 1 `shouldBe` bigDecimal 4 0
+      BigDecimal 16 1 / BigDecimal 4 1 `shouldBe` BigDecimal 4 0
     it "yields x for x/1 for any x" $
       property $ \x -> x/1 === (x :: BigDecimal)
     it "yields 1 for x/x any non-zero x" $
@@ -124,14 +124,14 @@ spec = do
       4 / 9 `shouldBe` fromString "0.4444"
 
   describe "fromRational" $ do
-    it "constructs a bigDecimal from a Ratio" $
-      fromRational (1 :% 32) `shouldBe` 1 / bigDecimal 32 0
+    it "constructs a BigDecimal from a Ratio" $
+      fromRational (1 :% 32) `shouldBe` 1 / BigDecimal 32 0
     it "works for any non-zero divisors" $
-      property $ \x y -> if y == 0 then 1 ===1 else fromRational (x :% y) === bigDecimal x 0 / bigDecimal y 0
+      property $ \x y -> if y == 0 then 1 ===1 else fromRational (x :% y) === BigDecimal x 0 / BigDecimal y 0
 
   describe "toRational" $ do
-    it "converts a bigDecimal to a Ratio" $
-      toRational (1 / bigDecimal 32 0) `shouldBe` (1 :% 32)
+    it "converts a BigDecimal to a Ratio" $
+      toRational (1 / BigDecimal 32 0) `shouldBe` (1 :% 32)
     it "is inverse to fromRational" $
       property $ \x -> (x::BigDecimal) === fromRational (toRational x)
 
@@ -294,11 +294,11 @@ spec = do
 
   describe "shrink" $ do
     it "removes trailing zeros while taking care of the scale" $
-      nf (bigDecimal 1000 3) `shouldBe` bigDecimal 1 0
+      nf (BigDecimal 1000 3) `shouldBe` BigDecimal 1 0
     it "does not eliminate more 0s than requested" $
-      trim 2 (bigDecimal 1000 3) `shouldBe` bigDecimal 100 2
+      trim 2 (BigDecimal 1000 3) `shouldBe` BigDecimal 100 2
     it "does not eliminate more 0s than possible" $
-      nf (bigDecimal 1230 3) `shouldBe` bigDecimal 123 2
+      nf (BigDecimal 1230 3) `shouldBe` BigDecimal 123 2
     it "does not change the value of a BigDecimal" $
       property $ \bd n -> trim n bd === bd
 
@@ -307,9 +307,9 @@ spec = do
       property $ \x y -> let (x', y') = matchScales (x,y) in scale x' === scale y'
 
   describe "roundBD" $ do
-    it "rounds a bigDecimal " $
-      roundBD (bigDecimal 123456 3) (halfUp 2) `shouldBe` bigDecimal 12346 2
+    it "rounds a BigDecimal " $
+      roundBD (BigDecimal 123456 3) (halfUp 2) `shouldBe` BigDecimal 12346 2
     it "reject negative scales in MathContext" $
-      evaluate (roundBD (bigDecimal 123456 3) (halfUp (-2))) `shouldThrow` anyArithException 
+      evaluate (roundBD (BigDecimal 123456 3) (halfUp (-2))) `shouldThrow` anyArithException 
     it "ignores MathContext with scale higher than in input value" $
-      roundBD (bigDecimal 123456 3) (halfUp 10) `shouldBe` bigDecimal 123456 3
+      roundBD (BigDecimal 123456 3) (halfUp 10) `shouldBe` BigDecimal 123456 3
