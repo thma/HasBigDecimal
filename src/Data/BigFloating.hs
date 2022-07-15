@@ -47,7 +47,7 @@ sqr x mc
       where
         refine x initial mc@(_, Just scale) = find withinPrecision $ iterate nextGuess (initial, 0)
           where
-            withinPrecision (guess, count) = abs (guess^2 - x) < BigDecimal 10 scale || count > 10 * scale * (fromIntegral $ precision x)
+            withinPrecision (guess, count) = abs (guess^2 - x) < BigDecimal 10 scale || count > 10 * scale * fromIntegral (precision x)
             nextGuess (guess, count) = (nf $ divide (guess + divide (x, guess) mc, 2) mc, count+1)
 
 nthRoot :: BigDecimal -> Natural -> RoundingAdvice -> BigDecimal

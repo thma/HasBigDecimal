@@ -78,7 +78,7 @@ data RoundingMode
   | PRECISE   -- ^ Rounding mode to assert that the requested operation has an exact result, hence no rounding is applied.
 
 instance Show BigDecimal where
-  show bd = toString bd
+  show = toString
 
 instance Read BigDecimal where
   readsPrec _ str =
