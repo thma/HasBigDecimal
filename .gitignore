@@ -26,3 +26,5 @@ build
 root
 piServer
 tasks.json
+stack.yaml
+stack.yaml.lock

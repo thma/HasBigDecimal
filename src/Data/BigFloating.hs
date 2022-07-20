@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor, DeriveFoldable, NoMonomorphismRestriction #-}
 module Data.BigFloating
   ( piChudnovsky
   , sqr
@@ -9,30 +10,103 @@ import           Data.BigDecimal
 import           Data.List  (find)
 import           Data.Maybe (fromMaybe, fromJust)
 import           GHC.Real   ((%), Ratio ((:%)))
-import GHC.Natural
+import           GHC.Natural
+import           Data.Foldable (toList)
 
--- I'm giving some implementation ideas for approximisations for functions on transcendental numbers.
--- The rest is left as an exercise to the interested reader ;-)
-instance Floating BigDecimal where
-    pi    = piChudnovsky defaultRounding
-    exp   = undefined -- e^x
-    log   = undefined
-    sin   = undefined
-    cos   = undefined
-    asin  = undefined
-    acos  = undefined
-    atan  = undefined
-    sinh  = undefined
-    cosh  = undefined
-    asinh = undefined
-    acosh = undefined
-    atanh = undefined
+data Stream a = a :> Stream a
+  deriving (Functor, Foldable)
 
--- not required for minimal implementation
-    sqrt x = sqr x defaultRounding
-    x ** y = nthRoot (x^b) (fromIntegral n) defaultRounding
-                where
-                  (b :% n) = toRational y
+infixr 2 :>
+
+ex = 1 :> ex
+
+sine   = 0 :> cosine
+cosine = 1 :> fmap negate sine
+
+
+-- | Turn a Stream f into a functional approximation
+--   of its Taylor series around a point a.
+-- That is, eval a f ≈ f(a + x)
+eval :: Fractional a => Int -> a -> Stream a -> a -> a
+eval i a f x = foldr1 (\ fa f' -> fa + (x - a) * f') (take i taylor)
+ where
+  taylor      = zipWith (/) (toList f) factorials
+  factorials  = let fats = 1 : zipWith (*) fats [1..]
+                in fmap fromIntegral fats
+
+-- | Taylor series representation of the derivative.
+diff :: Stream a -> Stream a
+diff (_ :> f') = f'
+
+-- | Taylor series for the constant zero.
+zero :: Num a => Stream a
+zero = 0 :> zero
+
+pee    = pee :> zero
+
+-- | Taylor series for the identity function `f x = x`.
+x :: Num a => Stream a
+x = 0 :> 1 :> zero
+
+instance Num a => Num (Stream a) where
+  -- Good ol' linearity
+  (+)  (fa :> f')  (ga :> g') = fa + ga :> f' + g'
+  (-)  (fa :> f')  (ga :> g') = fa - ga :> f' - g'
+  negate = fmap negate
+  -- Leibniz rule applied to streams
+  (*) f@(fa :> f') g@(ga :> g') = fa * ga :> f' * g + f * g'
+  fromInteger n = fromInteger n :> zero
+  abs    = error "Absolute value is not a smooth function"
+  signum = error "No well-defined sign for a series"
+
+instance Fractional a => Fractional (Stream a) where
+  -- The division rule from Calculus. We assume g(0) ≠ 0
+  (/) f@(fa :> f') g@(ga :> g') = fa / ga :> (f' * g - f * g') / g^2
+  fromRational n = fromRational n :> zero
+
+analytic g g' f@(fa :> f') = g fa :> g' f * f'
+
+instance Floating a => Floating (Stream a) where
+  pi    = pi :> zero
+  exp   = analytic exp   exp
+  log   = analytic log   recip
+  sin   = analytic sin   cos
+  cos   = analytic cos   (negate . sin)
+  asin  = analytic asin  (\x -> 1 / sqrt (1 - x^2))
+  acos  = analytic acos  (\x -> -1 / sqrt (1 - x^2))
+  atan  = analytic atan  (\x -> 1 / (1 + x^2))
+  sinh  = analytic sinh  cosh
+  cosh  = analytic cosh  sinh
+  asinh = analytic asinh (\x -> 1 / sqrt (x^2 + 1))
+  acosh = analytic acosh (\x -> 1 / sqrt (x^2 - 1))
+  atanh = analytic atanh (\x -> 1 / (1 - x^2))
+
+ 
+
+
+
+-- -- I'm giving some implementation ideas for approximisations for functions on transcendental numbers.
+-- -- The rest is left as an exercise to the interested reader ;-)
+-- instance Floating BigDecimal where
+--     pi    = piChudnovsky defaultRounding
+--     exp   = undefined -- e^x
+--     log   = undefined
+--     sin   = undefined
+--     cos   = undefined
+--     asin  = undefined
+--     acos  = undefined
+--     atan  = undefined
+--     sinh  = undefined
+--     cosh  = undefined
+--     asinh = undefined
+--     acosh = undefined
+--     atanh = undefined
+
+-- -- not required for minimal implementation
+--     sqrt x = sqr x defaultRounding
+--     x ** y = nthRoot (x^b) (fromIntegral n) defaultRounding
+--                 where
+--                   (b :% n) = toRational y
 
 defaultRounding :: RoundingAdvice
 defaultRounding = (DOWN, Just 100)
