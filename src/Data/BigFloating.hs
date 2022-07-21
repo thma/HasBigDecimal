@@ -18,6 +18,7 @@ data Stream a = a :> Stream a
 
 infixr 2 :>
 
+ex :: Num a => Stream a
 ex = 1 :> ex
 
 sine   = 0 :> cosine
@@ -27,8 +28,8 @@ cosine = 1 :> fmap negate sine
 -- | Turn a Stream f into a functional approximation
 --   of its Taylor series around a point a.
 -- That is, eval a f ≈ f(a + x)
-eval :: Fractional a => Int -> a -> Stream a -> a -> a
-eval i a f x = foldr1 (\ fa f' -> fa + (x - a) * f') (take i taylor)
+eval :: Fractional a => a -> Stream a -> a -> a
+eval a f x = foldr1 (\ fa f' -> fa + (x - a) * f') (take 300 taylor)
  where
   taylor      = zipWith (/) (toList f) factorials
   factorials  = let fats = 1 : zipWith (*) fats [1..]
@@ -42,7 +43,11 @@ diff (_ :> f') = f'
 zero :: Num a => Stream a
 zero = 0 :> zero
 
-pee    = pee :> zero
+euler :: BigDecimal
+euler = eval 0 ex 1 
+
+p :: BigDecimal
+p = eval 0 pi 0
 
 -- | Taylor series for the identity function `f x = x`.
 x :: Num a => Stream a
@@ -85,28 +90,28 @@ instance Floating a => Floating (Stream a) where
 
 
 
--- -- I'm giving some implementation ideas for approximisations for functions on transcendental numbers.
--- -- The rest is left as an exercise to the interested reader ;-)
--- instance Floating BigDecimal where
---     pi    = piChudnovsky defaultRounding
---     exp   = undefined -- e^x
---     log   = undefined
---     sin   = undefined
---     cos   = undefined
---     asin  = undefined
---     acos  = undefined
---     atan  = undefined
---     sinh  = undefined
---     cosh  = undefined
---     asinh = undefined
---     acosh = undefined
---     atanh = undefined
+-- I'm giving some implementation ideas for approximisations for functions on transcendental numbers.
+-- The rest is left as an exercise to the interested reader ;-)
+instance Floating BigDecimal where
+    pi    = piChudnovsky defaultRounding
+    exp   = undefined -- e^x
+    log   = undefined
+    sin   = undefined
+    cos   = undefined
+    asin  = undefined
+    acos  = undefined
+    atan  = undefined
+    sinh  = undefined
+    cosh  = undefined
+    asinh = undefined
+    acosh = undefined
+    atanh = undefined
 
--- -- not required for minimal implementation
---     sqrt x = sqr x defaultRounding
---     x ** y = nthRoot (x^b) (fromIntegral n) defaultRounding
---                 where
---                   (b :% n) = toRational y
+-- not required for minimal implementation
+    sqrt x = sqr x defaultRounding
+    x ** y = nthRoot (x^b) (fromIntegral n) defaultRounding
+                where
+                  (b :% n) = toRational y
 
 defaultRounding :: RoundingAdvice
 defaultRounding = (DOWN, Just 100)
