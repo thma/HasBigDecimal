@@ -43,6 +43,7 @@ module Data.BigDecimal
   , halfUp
   , fromString
   , fromStringMaybe
+  , fromNatural
   , matchScales
   , toString
   )
@@ -171,6 +172,7 @@ matchScales (a@(BigDecimal integerA scaleA), b@(BigDecimal integerB scaleB))
 -- | returns the number of digits of a BigDecimal
 precision :: BigDecimal -> Natural
 precision 0                  = 1
+-- precision (BigDecimal val _) = (fromInteger . toInteger . length . show . abs) val
 precision (BigDecimal val _) = go 1 $ abs val
   where go ds n = if n >= 10 then go (ds + 1) (n `div` 10) else ds
 
