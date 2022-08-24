@@ -171,7 +171,8 @@ matchScales (a@(BigDecimal integerA scaleA), b@(BigDecimal integerB scaleB))
 -- | returns the number of digits of a BigDecimal
 precision :: BigDecimal -> Natural
 precision 0                  = 1
-precision (BigDecimal val _) = 1 + floor (logBase 10 $ abs $ fromInteger val)
+precision (BigDecimal val _) = go 1 $ abs val
+  where go ds n = if n >= 10 then go (ds + 1) (n `div` 10) else ds
 
 -- | removes trailing zeros from a BigDecimals intValue by decreasing the scale
 trim :: Natural -> BigDecimal -> BigDecimal
