@@ -38,7 +38,7 @@ library
       base >=4.7 && <5
   default-language: Haskell2010
 
-executable HasBigDecimal-exe
+executable HasBigDecimal-Demo
   main-is: Main.hs
   other-modules:
       Paths_HasBigDecimal
@@ -48,6 +48,19 @@ executable HasBigDecimal-exe
   build-depends:
       HasBigDecimal
     , base >=4.7 && <5
+  default-language: Haskell2010
+
+executable benchmark
+  main-is: Main.hs
+  other-modules:
+      Paths_HasBigDecimal
+  hs-source-dirs:
+      benchmark
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      HasBigDecimal
+    , base >=4.7 && <5
+    , criterion
   default-language: Haskell2010
 
 test-suite HasBigDecimal-test
