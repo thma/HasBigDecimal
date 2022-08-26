@@ -43,7 +43,7 @@ module Data.BigDecimal
     fromStringMaybe,
     fromNatural,
     matchScales,
-    toString,
+    --toString,
   )
 where
 
@@ -111,7 +111,7 @@ instance Eq BigDecimal where
 instance Fractional BigDecimal where
   -- default division rounds up and does not limit precision
   a / b = nf $ divide (matchScales (a, b)) (HALF_UP, Nothing)
-  fromRational ratio@(x :% y) = fromRatio ratio (HALF_UP, Nothing)
+  fromRational ratio = fromRatio ratio (HALF_UP, Nothing)
 
 -- | creates a BigDecimal from a 'Rational' value. 'RoundingAdvice' defines precision and rounding mode.
 fromRatio :: Rational -> RoundingAdvice -> BigDecimal
