@@ -8,6 +8,7 @@ name:           HasBigDecimal
 version:        0.2.0.0
 synopsis:       A library for arbitrary precision decimal numbers.
 description:    Please see the README on GitHub at <https://github.com/thma/HasBigDecimal#readme>
+category:       Math
 homepage:       https://github.com/thma/HasBigDecimal#readme
 bug-reports:    https://github.com/thma/HasBigDecimal/issues
 author:         Thomas Mahler
