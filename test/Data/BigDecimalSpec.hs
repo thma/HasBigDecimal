@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-overflowed-literals #-}
 module Data.BigDecimalSpec (main, spec) where
 
 import Control.Exception (evaluate)

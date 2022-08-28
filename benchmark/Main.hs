@@ -1,4 +1,6 @@
-module Main where
+module Main (
+  main
+) where
 
 import Criterion.Main (bench, defaultMain, nf)
 import Data.BigDecimal hiding (nf, precision)

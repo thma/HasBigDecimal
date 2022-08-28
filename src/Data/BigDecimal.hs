@@ -1,4 +1,5 @@
--- | This module defines the type 'BigDecimal' which provides a representation of arbitrary precision decimal numbers.
+{-# OPTIONS_GHC -fno-warn-type-defaults #-} -- avoids  warnings for things like x^2
+-- -- | This module defines the type 'BigDecimal' which provides a representation of arbitrary precision decimal numbers.
 --     'BigDecimal' is a native Haskell implementation based on arbitrary sized 'Integer' values.
 --     The implementation was inspired by Java BigDecimals.
 --
@@ -47,11 +48,11 @@ module Data.BigDecimal
   )
 where
 
-import Data.List (elemIndex)
-import Data.Maybe (fromJust, fromMaybe)
-import GHC.Natural (Natural)
-import GHC.Real (Ratio ((:%)))
-import Text.Read (readMaybe)
+import           Data.List   (elemIndex)
+import           Data.Maybe  (fromJust, fromMaybe)
+import           GHC.Natural (Natural)
+import           GHC.Real    (Ratio ((:%)))
+import           Text.Read   (readMaybe)
 
 -- | BigDecimal is represented by an unscaled Integer value and a Natural that defines the scale
 --   E.g.: (BigDecimal 1234 2) represents the decimal value 12.34.
@@ -92,7 +93,7 @@ instance Show BigDecimal where
 instance Read BigDecimal where
   readsPrec _ str =
     case fromStringMaybe str of
-      Nothing -> []
+      Nothing   -> []
       (Just bd) -> [(bd, "")]
 
 instance Num BigDecimal where
@@ -118,7 +119,7 @@ fromRatio :: Rational -> RoundingAdvice -> BigDecimal
 fromRatio (x :% y) = divide (fromInteger x, fromInteger y)
 
 instance Real BigDecimal where
-  toRational (BigDecimal val scale) = toRational val * 10 ^^ (- fromNatural scale)
+  toRational (BigDecimal val scl) = toRational val * 10 ^^ (- fromNatural scl)
 
 instance Ord BigDecimal where
   compare a b =
@@ -152,26 +153,26 @@ divide (a, b) (rMode, prefScale) =
 -- | divide two correctly scaled Integers and apply the RoundingMode
 divUsing :: RoundingMode -> Integer -> Integer -> Integer
 divUsing rounding a b =
-  let (quot, rem) = quotRem a b
-      delta = (10 * abs rem `div` abs b) - 5
+  let (quotient, remainder) = quotRem a b
+      delta = (10 * abs remainder `div` abs b) - 5
    in case rounding of
-        PRECISE -> if rem == 0 then quot else error "non-terminating decimal expansion"
-        UP -> if abs rem > 0 then quot + signum quot else quot
-        CEILING -> if abs rem > 0 && quot >= 0 then quot + 1 else quot
-        HALF_UP -> if delta >= 0 then quot + signum quot else quot
-        HALF_DOWN -> if delta <= 0 then quot else quot + signum quot
-        DOWN -> quot
-        FLOOR -> if quot >= 0 then quot else quot - 1
+        PRECISE -> if remainder == 0 then quotient else error "non-terminating decimal expansion"
+        UP -> if abs remainder > 0 then quotient + signum quotient else quotient
+        CEILING -> if abs remainder > 0 && quotient >= 0 then quotient + 1 else quotient
+        HALF_UP -> if delta >= 0 then quotient + signum quotient else quotient
+        HALF_DOWN -> if delta <= 0 then quotient else quotient + signum quotient
+        DOWN -> quotient
+        FLOOR -> if quotient >= 0 then quotient else quotient - 1
         HALF_EVEN
-          | delta > 0 -> quot + signum quot
-          | delta == 0 && odd quot -> quot + signum quot
-          | otherwise -> quot
+          | delta > 0 -> quotient + signum quotient
+          | delta == 0 && odd quotient -> quotient + signum quotient
+          | otherwise -> quotient
 
 -- | round a BigDecimal according to a 'RoundingAdvice' to 'n' digits applying the 'RoundingMode' 'rMode'
 roundBD :: BigDecimal -> RoundingAdvice -> BigDecimal
-roundBD bd@(BigDecimal val scale) (rMode, Just n)
-  | n < 0 || n >= scale = bd
-  | otherwise = BigDecimal (divUsing rMode val (10 ^ (scale - n))) n
+roundBD bd@(BigDecimal val scl) (rMode, Just n)
+  | n < 0 || n >= scl = bd
+  | otherwise = BigDecimal (divUsing rMode val (10 ^ (scl - n))) n
 roundBD bd _ = bd
 
 -- | match the scales of a tuple of BigDecimals
@@ -188,10 +189,10 @@ precision = fromInteger . toInteger . length . show . abs . value
 
 -- | removes trailing zeros from a BigDecimals intValue by decreasing the scale
 trim :: Natural -> BigDecimal -> BigDecimal
-trim prefScale bd@(BigDecimal val scale) =
+trim prefScale bd@(BigDecimal val scl) =
   let (v, r) = quotRem val 10
-   in if r == 0 && 0 <= prefScale && prefScale < scale
-        then trim prefScale $ BigDecimal v (scale - 1)
+   in if r == 0 && 0 <= prefScale && prefScale < scl
+        then trim prefScale $ BigDecimal v (scl - 1)
         else bd
 
 -- | computes the normal form of a BigDecimal
@@ -218,20 +219,20 @@ fromStringMaybe s =
 -- | returns a readable String representation of a BigDecimal
 --   e.g. @ toString (BigDecimal 314 2) @ yields "3.14"
 toString :: BigDecimal -> String
-toString bd@(BigDecimal intValue scale) =
+toString (BigDecimal intValue scl) =
   let s = show $ abs intValue
       filled =
-        if fromNatural scale >= length s
-          then replicate (1 + fromNatural scale - length s) '0' ++ s
+        if fromNatural scl >= length s
+          then replicate (1 + fromNatural scl - length s) '0' ++ s
           else s
-      splitPos = length filled - fromNatural scale
+      splitPos = length filled - fromNatural scl
       (ints, decimals) = splitAt splitPos filled
       sign = if intValue < 0 then "-" else ""
    in sign ++ if not (null decimals) then ints ++ "." ++ decimals else ints
 
--- | construct a 'RoundingAdvice' for rounding 'HALF_UP' with 'scale' decimal digits
+-- | construct a 'RoundingAdvice' for rounding 'HALF_UP' with 'scl' decimal digits
 halfUp :: Natural -> RoundingAdvice
-halfUp scale = (HALF_UP, Just scale)
+halfUp scl = (HALF_UP, Just scl)
 
 -- | convert a Natural to any numeric type a
 fromNatural :: Num a => Natural -> a
