@@ -116,7 +116,7 @@ instance Fractional BigDecimal where
 
 -- | creates a BigDecimal from a 'Rational' value. 'RoundingAdvice' defines precision and rounding mode.
 fromRatio :: Rational -> RoundingAdvice -> BigDecimal
-fromRatio (x :% y) = divide (fromInteger x, fromInteger y)
+fromRatio (x :% y) = nf . divide (fromInteger x, fromInteger y)
 
 instance Real BigDecimal where
   toRational (BigDecimal val scl) = toRational val * 10 ^^ (- fromNatural scl)
