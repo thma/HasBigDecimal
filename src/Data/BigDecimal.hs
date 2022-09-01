@@ -44,7 +44,6 @@ module Data.BigDecimal
     fromStringMaybe,
     fromNatural,
     matchScales,
-    --toString,
   )
 where
 
