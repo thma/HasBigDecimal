@@ -48,6 +48,7 @@ module Data.BigDecimal
 where
 
 import           Data.List   (elemIndex)
+import           Data.Foldable (foldl')
 import           Data.Maybe  (fromJust, fromMaybe)
 import           GHC.Natural (Natural)
 import           GHC.Real    (Ratio ((:%)))
@@ -184,7 +185,10 @@ matchScales (a@(BigDecimal integerA scaleA), b@(BigDecimal integerB scaleB))
 -- | returns the number of digits of a BigDecimal.
 precision :: BigDecimal -> Natural
 -- see benchmark/Main.hs
-precision = fromInteger . toInteger . length . show . abs . value
+precision = len . show . abs . value
+  where
+    len :: [a] -> Natural
+    len = foldl' (\c _ -> c+1) 0
 
 -- | removes trailing zeros from a BigDecimals intValue by decreasing the scale
 trim :: Natural -> BigDecimal -> BigDecimal
