@@ -6,13 +6,48 @@ module Taylor where
 -- my idea is to use the taylor series based definitions to give implementations for the BigDecimal Floating instance.
 
 import           Data.BigDecimal
-import           Data.BigFloating (piChudnovsky)
 import           Data.Foldable (toList)
---import           Prelude hiding (pi)
-
+import           Data.Char (digitToInt, intToDigit)
 
 defaultRounding :: RoundingAdvice
 defaultRounding = (DOWN, Just 400)
+
+factorial :: Integer -> BigDecimal
+factorial n = fromIntegral $ product [1..n]       
+
+e :: BigDecimal -> BigDecimal 
+e x = foldr (\i r -> x ^ i / factorial i + r) 0 [0..100]
+sin' :: BigDecimal -> BigDecimal 
+sin' x =  foldr (\i r-> ((-1) ^ i / factorial (2*i+1)) * x^(2*i + 1) + r) 0 [0..10000]
+cos' :: BigDecimal -> BigDecimal 
+cos' x = foldr (\i r -> ((-1) ^ i / factorial (2*i)) * x^(2*i) + r) 0 [0..10000]
+
+euler :: Int -> BigDecimal
+euler n = fromString (concat (["2", "."] ++ map show (tail (take n eList))))
+
+
+eList = eStream (1, 0, 1)
+   [(n, a * d, d) | (n, d, a) <- map (\k -> (1, k, 1)) [1..]] where
+   eStream z xs'@(x:xs)
+     | lb /= approx z 2 = eStream (mult z x) xs
+     | otherwise = lb : eStream (mult (10, -10 * lb, 1) z) xs'
+     where lb = approx z 1
+           approx (a, b, c) n = div (a * n + b) c
+           mult (a, b, c) (d, e, f) = (a * d, a * e + b * f, c * f) 
+
+pI :: Int -> BigDecimal
+pI n = fromString (concat (["3", "."] ++ map show (tail (take n piList))))
+
+
+piList :: Integral a => [a]
+piList = piStream (1, 0, 1)
+   [(n, a*d, d) | (n, d, a) <- map (\k -> (k, 2 * k + 1, 2)) [1..]] where
+   piStream z xs'@(x:xs)
+     | lb /= approx z 4 = piStream (mult z x) xs
+     | otherwise = lb : piStream (mult (10, -10 * lb, 1) z) xs'
+     where lb = approx z 3
+           approx (a, b, c) n = div (a * n + b) c
+           mult (a, b, c) (d, e, f) = (a * d, a * e + b * f, c * f) 
 
 data Stream a = a :> Stream a
   deriving (Functor, Foldable)
@@ -55,14 +90,6 @@ diff (_ :> f') = f'
 zero :: Num a => Stream a
 zero = 0 :> zero
 
-euler :: BigDecimal
-euler = eval 0 ex 1
-
---pii = piChudnovsky defaultRounding
-
-p :: BigDecimal
-p = eval 0 pi 0
-
 -- | Taylor series for the identity function `f x = x`.
 x :: Num a => Stream a
 x = 0 :> 1 :> zero
@@ -86,20 +113,20 @@ instance Fractional a => Fractional (Stream a) where
 analytic :: Num a => (a -> a) -> (Stream a -> Stream a) -> Stream a -> Stream a
 analytic g g' f@(fa :> f') = g fa :> g' f * f'
 
-instance Floating (Stream BigDecimal) where
-  pi    = piChudnovsky defaultRounding :> zero
-  exp   = analytic exp   exp
-  log   = analytic log   recip
-  sin   = analytic sin   cos
-  cos   = analytic cos   (negate . sin)
-  asin  = analytic asin  (\x -> 1 / sqrt (1 - x^2))
-  acos  = analytic acos  (\x -> -1 / sqrt (1 - x^2))
-  atan  = analytic atan  (\x -> 1 / (1 + x^2))
-  sinh  = analytic sinh  cosh
-  cosh  = analytic cosh  sinh
-  asinh = analytic asinh (\x -> 1 / sqrt (x^2 + 1))
-  acosh = analytic acosh (\x -> 1 / sqrt (x^2 - 1))
-  atanh = analytic atanh (\x -> 1 / (1 - x^2))
+-- instance Floating (Stream BigDecimal) where
+--   pi    = piChudnovsky defaultRounding :> zero
+--   exp   = analytic exp   exp
+--   log   = analytic log   recip
+--   sin   = analytic sin   cos
+--   cos   = analytic cos   (negate . sin)
+--   asin  = analytic asin  (\x -> 1 / sqrt (1 - x^2))
+--   acos  = analytic acos  (\x -> -1 / sqrt (1 - x^2))
+--   atan  = analytic atan  (\x -> 1 / (1 + x^2))
+--   sinh  = analytic sinh  cosh
+--   cosh  = analytic cosh  sinh
+--   asinh = analytic asinh (\x -> 1 / sqrt (x^2 + 1))
+--   acosh = analytic acosh (\x -> 1 / sqrt (x^2 - 1))
+--   atanh = analytic atanh (\x -> 1 / (1 - x^2))
 
 
 
