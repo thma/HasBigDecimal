@@ -30,7 +30,10 @@
 --      >  λ> divide (a, c) $ halfUp 20
 --      >  0.01166400010614240097
 module Data.BigDecimal
-  ( BigDecimal (..),
+  ( BigDecimal,
+    value,
+    scale,
+    bigDecimal,
     RoundingMode (..),
     RoundingAdvice,
     precision,
@@ -56,12 +59,18 @@ import           Text.Read   (readMaybe)
 
 -- | BigDecimal is represented by an unscaled Integer value and a Natural that defines the scale
 --   E.g.: (BigDecimal 1234 2) represents the decimal value 12.34.
+--   this data type is kept opaque, that is its constructor is not exported. For construction of BigDecimal
+--   instances the smart constructor `bigDecimal` must be used.
 data BigDecimal = BigDecimal
   { -- | the unscaled Integer value
     value :: Integer,
     -- | the scale (i.e. the number of digits after the decimal point)
     scale :: Natural
   }
+
+-- | only this smart Constructor is exposed.
+bigDecimal :: Integer -> Natural -> BigDecimal
+bigDecimal = BigDecimal 
 
 -- | A RoundingAdvice is interpreted by divisions and rounding operations to specify the expected loss of precision and the rounding behaviour.
 --   RoundingAdvice is a pair of a 'RoundingMode' and a target precision of type 'Maybe' 'Natural'. The precision defines the number of digits after the decimal point.
@@ -129,12 +138,12 @@ instance Ord BigDecimal where
 -- | add two BigDecimals
 plus :: (BigDecimal, BigDecimal) -> BigDecimal
 plus (a@(BigDecimal valA scaleA), b@(BigDecimal valB scaleB))
-  | scaleA == scaleB = BigDecimal (valA + valB) scaleA
+  | scaleA == scaleB = bigDecimal (valA + valB) scaleA
   | otherwise = plus $ matchScales (a, b)
 
 -- | multiply two BigDecimals
 mul :: (BigDecimal, BigDecimal) -> BigDecimal
-mul (BigDecimal valA scaleA, BigDecimal valB scaleB) = BigDecimal (valA * valB) (scaleA + scaleB)
+mul (BigDecimal valA scaleA, BigDecimal valB scaleB) = bigDecimal (valA * valB) (scaleA + scaleB)
 
 -- | divide two BigDecimals and applies the 'RoundingAdvice' (i.e. a tuple of 'RoundingMode' and the specified precision) for rounding.
 divide ::
@@ -148,7 +157,7 @@ divide ::
 divide (a, b) (rMode, prefScale) =
   let (BigDecimal numA _, BigDecimal numB _) = matchScales (a, b)
       maxPrecision = fromMaybe (precision a + round (fromIntegral (precision b) * 10 / 3)) prefScale :: Natural
-   in trim maxPrecision (BigDecimal (divUsing rMode (numA * (10 :: Integer) ^ maxPrecision) numB) maxPrecision)
+   in trim maxPrecision (bigDecimal (divUsing rMode (numA * (10 :: Integer) ^ maxPrecision) numB) maxPrecision)
 
 -- | divide two correctly scaled Integers and apply the RoundingMode
 divUsing :: RoundingMode -> Integer -> Integer -> Integer
@@ -172,7 +181,7 @@ divUsing rounding a b =
 roundBD :: BigDecimal -> RoundingAdvice -> BigDecimal
 roundBD bd@(BigDecimal val scl) (rMode, Just n)
   | n < 0 || n >= scl = bd
-  | otherwise = BigDecimal (divUsing rMode val (10 ^ (scl - n))) n
+  | otherwise = bigDecimal (divUsing rMode val (10 ^ (scl - n))) n
 roundBD bd _ = bd
 
 -- | match the scales of a tuple of BigDecimals
@@ -216,8 +225,8 @@ fromStringMaybe s =
    in do
         intValue <- maybeIntValue
         case maybeIndex of
-          Nothing -> pure $ BigDecimal intValue 0
-          Just i -> pure $ BigDecimal intValue (fromIntegral (length s - i - 1))
+          Nothing -> pure $ bigDecimal intValue 0
+          Just i  -> pure $ bigDecimal intValue (fromIntegral (length s - i - 1))
 
 -- | returns a readable String representation of a BigDecimal
 --   e.g. @ toString (BigDecimal 314 2) @ yields "3.14"

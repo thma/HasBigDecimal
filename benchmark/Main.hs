@@ -12,8 +12,9 @@ main = benchmarks
 
 precision :: BigDecimal -> Natural
 precision 0 = 1
-precision (BigDecimal val _) = go 1 $ abs val
+precision bd = go 1 $ abs val
   where
+    val     = value bd
     go ds n = if n >= 10 then go (ds + 1) (n `div` 10) else ds
 
 precision' :: BigDecimal -> Natural

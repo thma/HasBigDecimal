@@ -35,19 +35,19 @@ eList = eStream (1, 0, 1)
            approx (a, b, c) n = div (a * n + b) c
            mult (a, b, c) (d, e, f) = (a * d, a * e + b * f, c * f) 
 
-pI :: Int -> BigDecimal
-pI n = fromString (concat (["3", "."] ++ map show (tail (take n piList))))
+-- pI :: Int -> BigDecimal
+-- pI n = fromString (concat (["3", "."] ++ map show (tail (take n piList))))
 
 
-piList :: Integral a => [a]
-piList = piStream (1, 0, 1)
-   [(n, a*d, d) | (n, d, a) <- map (\k -> (k, 2 * k + 1, 2)) [1..]] where
-   piStream z xs'@(x:xs)
-     | lb /= approx z 4 = piStream (mult z x) xs
-     | otherwise = lb : piStream (mult (10, -10 * lb, 1) z) xs'
-     where lb = approx z 3
-           approx (a, b, c) n = div (a * n + b) c
-           mult (a, b, c) (d, e, f) = (a * d, a * e + b * f, c * f) 
+-- piList :: Integral a => [a]
+-- piList = piStream (1, 0, 1)
+--    [(n, a*d, d) | (n, d, a) <- map (\k -> (k, 2 * k + 1, 2)) [1..]] where
+--    piStream z xs'@(x:xs)
+--      | lb /= approx z 4 = piStream (mult z x) xs
+--      | otherwise = lb : piStream (mult (10, -10 * lb, 1) z) xs'
+--      where lb = approx z 3
+--            approx (a, b, c) n = div (a * n + b) c
+--            mult (a, b, c) (d, e, f) = (a * d, a * e + b * f, c * f) 
 
 data Stream a = a :> Stream a
   deriving (Functor, Foldable)

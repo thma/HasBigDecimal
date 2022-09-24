@@ -22,4 +22,4 @@ instance Arbitrary BigDecimal where
     arbitrary = do
       unscaledValue     <- arbitrary
       NonNegative scale <- arbitrary
-      return $ BigDecimal unscaledValue scale
+      return $ bigDecimal unscaledValue scale

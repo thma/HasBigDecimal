@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Data.BigFloating
   ( piChudnovsky
+  , pI
   , sqr
   , nthRoot
   )
@@ -49,13 +50,15 @@ sqr x mc
         refine _ _ (_, Nothing)           = error "can't produce square root with unlimited precision"
         refine r initial ra@(_, Just scl) = find withinPrecision $ iterate nextGuess (initial, 0)
           where
-            withinPrecision (guess, count) = abs (guess^(2::Int) - r) < BigDecimal 10 scl || count > 10 * scl * precision r
+            withinPrecision (guess, count) = abs (guess^(2::Int) - r) < bigDecimal 10 scl || count > 10 * scl * precision r
             nextGuess (guess, count) = (nf $ divide (guess + divide (r, guess) mc, 2) ra, count+1)
 
+-- | computes the n-th root of BigDecimal x. rounding and precision defined by RoundingAdvice.
+--   We are using Newton's algorithm.
 nthRoot :: BigDecimal -> Natural -> RoundingAdvice -> BigDecimal
 nthRoot x n mc@(rm, maybeScale)
   | x <  0 && even n   = error "can't determine even roots of negative numbers"
-  | x <  0 && odd  n   = - nthRoot x (-n) mc
+  | x <  0 && odd  n   = - nthRoot (-x) n mc
   | x == 0    = 0
   | otherwise = roundBD (fst (fromMaybe (error "did not find a sqrt") $ refine x 1 (rm, Just (s+4)))) mc
       where
@@ -63,9 +66,9 @@ nthRoot x n mc@(rm, maybeScale)
         refine _ _ (_, Nothing)             = error "can't produce nth root with unlimited precision"
         refine r initial ra@(_, Just scl) = find withinPrecision $ iterate nextGuess (initial, 0)
           where
-            withinPrecision (guess, count) = abs (guess^n - r) < BigDecimal (fromIntegral $ n*10) scl || count > 10 * scl * precision r
+            withinPrecision (guess, count) = abs (guess^n - r) < bigDecimal (fromIntegral $ n*10) scl || count > 10 * scl * precision r
             nextGuess (guess, count) =
-              (nf $ divide ((guess * BigDecimal (fromIntegral $ n-1) 0) + divide (r, guess^(n-1)) ra, BigDecimal (fromIntegral n) 0) ra, count+1)
+              (nf $ divide ((guess * bigDecimal (fromIntegral $ n-1) 0) + divide (r, guess^(n-1)) ra, bigDecimal (fromIntegral n) 0) ra, count+1)
 
 
 -- | Compute pi using rounding mode and scale of the specified RoundingAdvice
@@ -104,4 +107,19 @@ piChudnovsky mc@(rMode, Just scl) = divide (1, 12 * divide (fromRatio s mc,f) mc
       b = 545140134
       c = 640320
 
+pI :: Int -> BigDecimal
+pI n = fromString (concat (["3", "."] ++ map show (tail (take n piList))))
 
+
+-- This is R. Zumkellers algorithm taken from https://oeis.org/search?q=pi&sort=&language=&go=Search.
+--piList :: Integral a => [a]
+piList :: [Integer]
+piList = piStream (1, 0, 1)
+   [(n, a*d, d) | (n, d, a) <- map (\k -> (k, 2 * k + 1, 2)) [1..]] where
+   piStream z xs'@(x:xs)
+     | lb /= approx z 4 = piStream (mult z x) xs
+     | otherwise = lb : piStream (mult (10, -10 * lb, 1) z) xs'
+     where lb = approx z 3
+           approx (a, b, c) n = div (a * n + b) c
+           mult (a, b, c) (d, e, f) = (a * d, a * e + b * f, c * f) 
+   piStream (_,_,_) [] = error "should never happen" -- avoid pattern matching warning

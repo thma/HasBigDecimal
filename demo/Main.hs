@@ -24,7 +24,7 @@ halfToneStepsFrom baseFrequency halfToneSteps =
 main :: IO ()
 main = do
   let a = fromString "3.1415926"
-      b = BigDecimal 31415926 7
+      b = bigDecimal 31415926 7
       r = fromJust $ fromStringMaybe "2"
       
   print $ 100 * a
