@@ -11,7 +11,6 @@ bigPi :: BigDecimal
 bigPi = piChudnovsky (DOWN, Just 100)
 
 
-
 halfToneStep :: BigDecimal
 halfToneStep = nthRoot 2 12 (HALF_UP, Just 50)
 
@@ -41,3 +40,5 @@ main = do
   print $ sqr 2 (halfUp 3000)
 
   print $ roundBD (halfToneStepsFrom 440 12) (halfUp 2)
+
+  print (pi :: BigFloating P500)

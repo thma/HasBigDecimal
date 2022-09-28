@@ -1,9 +1,15 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Data.BigFloating
   ( piChudnovsky
   , pI
   , sqr
   , nthRoot
+  , BigFloating (..)
+  , P100
+  , P500
   )
 where
 
@@ -12,6 +18,47 @@ import           Data.List  (find)
 import           Data.Maybe (fromMaybe, fromJust)
 import           GHC.Real   ((%), Ratio ((:%)))
 import           GHC.Natural
+import           Data.Fixed (HasResolution(..))
+import           Data.Data 
+
+-- | The type parameter should be an instance of 'HasResolution'.
+newtype BigFloating (a :: k) = BF BigDecimal deriving (Show, Read, Eq, Ord)
+
+data P100
+instance HasResolution P100 where
+    resolution _ = 100
+
+data P500
+instance HasResolution P500 where
+    resolution _ = 500
+
+instance (HasResolution a) => Num (BigFloating a) where
+  (BF a) + (BF b) = BF $ a + b
+  (BF a) * (BF b) = BF $ a * b
+  abs (BF a)      = BF (abs a)
+  signum (BF a)   = BF (signum a)
+  fromInteger     = BF . fromInteger
+  negate (BF a)   = BF (negate a)
+  
+instance (HasResolution a) => Fractional (BigFloating a) where
+  fromRational = BF . fromRational
+  recip (BF a) = BF (recip a)
+  
+instance (HasResolution a) => Floating (BigFloating a) where
+  pi = BF $ piChudnovsky (DOWN, Just $ fromInteger res)
+        where res = resolution (Proxy :: Proxy a)
+  exp   = undefined -- e^x
+  log   = undefined
+  sin   = undefined
+  cos   = undefined
+  asin  = undefined
+  acos  = undefined
+  atan  = undefined
+  sinh  = undefined
+  cosh  = undefined
+  asinh = undefined
+  acosh = undefined
+  atanh = undefined
 
 -- I'm giving some implementation ideas for approximisations for functions on transcendental numbers.
 -- The rest is left as an exercise to the interested reader ;-)
