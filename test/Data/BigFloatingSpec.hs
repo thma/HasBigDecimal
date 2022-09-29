@@ -46,4 +46,4 @@ spec = do
 
   describe "fast pi algorithm" $
    it "yields same result" $
-     piChudnovsky (FLOOR, Just 1000) `shouldBe` pI 1001
+     piChudnovsky (FLOOR, Just 1000) `shouldBe` pI (FLOOR, Just 1001)

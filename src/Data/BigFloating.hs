@@ -8,8 +8,7 @@ module Data.BigFloating
   , sqr
   , nthRoot
   , BigFloating (..)
-  , P100
-  , P500
+  , DOWN_100
   )
 where
 
@@ -18,21 +17,20 @@ import           Data.List  (find)
 import           Data.Maybe (fromMaybe, fromJust)
 import           GHC.Real   ((%), Ratio ((:%)))
 import           GHC.Natural
-import           Data.Fixed (HasResolution(..))
-import           Data.Data 
+import           Data.Data
+
+
+class HasRoundingAdvice (a :: k) where
+  roundingAdvice :: p a -> RoundingAdvice
+  
+data DOWN_100
+instance HasRoundingAdvice DOWN_100 where
+  roundingAdvice _ = (DOWN, Just 100)  
 
 -- | The type parameter should be an instance of 'HasResolution'.
 newtype BigFloating (a :: k) = BF BigDecimal deriving (Show, Read, Eq, Ord)
 
-data P100
-instance HasResolution P100 where
-    resolution _ = 100
-
-data P500
-instance HasResolution P500 where
-    resolution _ = 500
-
-instance (HasResolution a) => Num (BigFloating a) where
+instance (HasRoundingAdvice a) => Num (BigFloating a) where
   (BF a) + (BF b) = BF $ a + b
   (BF a) * (BF b) = BF $ a * b
   abs (BF a)      = BF (abs a)
@@ -40,13 +38,13 @@ instance (HasResolution a) => Num (BigFloating a) where
   fromInteger     = BF . fromInteger
   negate (BF a)   = BF (negate a)
   
-instance (HasResolution a) => Fractional (BigFloating a) where
+instance (HasRoundingAdvice a) => Fractional (BigFloating a) where
   fromRational = BF . fromRational
   recip (BF a) = BF (recip a)
   
-instance (HasResolution a) => Floating (BigFloating a) where
-  pi = BF $ piChudnovsky (DOWN, Just $ fromInteger res)
-        where res = resolution (Proxy :: Proxy a)
+instance (HasRoundingAdvice a) => Floating (BigFloating a) where
+  pi = BF $ pI ra
+        where ra = roundingAdvice (Proxy :: Proxy a)
   exp   = undefined -- e^x
   log   = undefined
   sin   = undefined
@@ -154,9 +152,9 @@ piChudnovsky mc@(rMode, Just scl) = divide (1, 12 * divide (fromRatio s mc,f) mc
       b = 545140134
       c = 640320
 
-pI :: Int -> BigDecimal
-pI n = fromString (concat (["3", "."] ++ map show (tail (take n piList))))
-
+pI :: RoundingAdvice -> BigDecimal
+pI (_, Nothing)           = error "can't compute pi with umlimited precision"
+pI (_, Just n) = fromString (concat (["3", "."] ++ map show (tail (take (fromNatural n) piList))))
 
 -- This is R. Zumkellers algorithm taken from https://oeis.org/search?q=pi&sort=&language=&go=Search.
 --piList :: Integral a => [a]

@@ -41,4 +41,4 @@ main = do
 
   print $ roundBD (halfToneStepsFrom 440 12) (halfUp 2)
 
-  print (pi :: BigFloating P500)
+  print (pi :: BigFloating DOWN_100)
