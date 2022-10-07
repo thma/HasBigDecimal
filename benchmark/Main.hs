@@ -4,7 +4,7 @@ module Main (
 
 import Criterion.Main (bench, defaultMain, nf)
 import Data.BigDecimal hiding (nf, precision)
-import GHC.Natural (Natural)
+import Numeric.Natural (Natural)
 import Data.Foldable (foldl')
 --import Data.Text as T hiding (foldl')
 

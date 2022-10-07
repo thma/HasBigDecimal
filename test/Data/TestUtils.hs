@@ -5,7 +5,7 @@ import qualified Test.Hspec as HS      (it)
 import           Test.Hspec.QuickCheck (modifyMaxSize, modifyMaxSuccess)
 import           Test.QuickCheck       hiding (shrink)
 import           Data.BigDecimal
-import GHC.Natural
+import           Numeric.Natural
 
 -- redefine it to use a sample with 1000 elements
 it :: (HasCallStack, Example a) => String -> a -> SpecWith (Arg a)

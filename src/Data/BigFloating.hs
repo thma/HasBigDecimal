@@ -16,7 +16,7 @@ import           Data.BigDecimal
 import           Data.List  (find)
 import           Data.Maybe (fromMaybe, fromJust)
 import           GHC.Real   ((%), Ratio ((:%)))
-import           GHC.Natural
+import           Numeric.Natural
 import           Data.Data
 
 

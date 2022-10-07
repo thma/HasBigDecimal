@@ -53,7 +53,7 @@ where
 import           Data.List   (elemIndex)
 import           Data.Foldable (foldl')
 import           Data.Maybe  (fromJust, fromMaybe)
-import           GHC.Natural (Natural)
+import           Numeric.Natural (Natural)
 import           GHC.Real    (Ratio ((:%)))
 import           Text.Read   (readMaybe)
 
