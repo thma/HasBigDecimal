@@ -45,7 +45,6 @@ module Data.BigDecimal
     halfUp,
     fromString,
     fromStringMaybe,
-    fromNatural,
     matchScales,
   )
 where
@@ -56,6 +55,7 @@ import           Data.Maybe  (fromJust, fromMaybe)
 import           Numeric.Natural (Natural)
 import           GHC.Real    (Ratio ((:%)))
 import           Text.Read   (readMaybe)
+
 
 -- | BigDecimal is represented by an unscaled Integer value and a Natural that defines the scale
 --   E.g.: (BigDecimal 1234 2) represents the decimal value 12.34.
@@ -128,7 +128,7 @@ fromRatio :: Rational -> RoundingAdvice -> BigDecimal
 fromRatio (x :% y) = nf . divide (fromInteger x, fromInteger y)
 
 instance Real BigDecimal where
-  toRational (BigDecimal val scl) = toRational val * 10 ^^ (- fromNatural scl)
+  toRational (BigDecimal val scl) = toRational val * 10 ^^ (- fromIntegral scl)
 
 instance Ord BigDecimal where
   compare a b =
@@ -234,10 +234,10 @@ toString :: BigDecimal -> String
 toString (BigDecimal intValue scl) =
   let s = show $ abs intValue
       filled =
-        if fromNatural scl >= length s
-          then replicate (1 + fromNatural scl - length s) '0' ++ s
+        if fromIntegral scl >= length s
+          then replicate (1 + fromIntegral scl - length s) '0' ++ s
           else s
-      splitPos = length filled - fromNatural scl
+      splitPos = length filled - fromIntegral scl
       (ints, decimals) = splitAt splitPos filled
       sign = if intValue < 0 then "-" else ""
    in sign ++ if not (null decimals) then ints ++ "." ++ decimals else ints
@@ -245,7 +245,3 @@ toString (BigDecimal intValue scl) =
 -- | construct a 'RoundingAdvice' for rounding 'HALF_UP' with 'scl' decimal digits
 halfUp :: Natural -> RoundingAdvice
 halfUp scl = (HALF_UP, Just scl)
-
--- | convert a Natural to any numeric type a
-fromNatural :: Num a => Natural -> a
-fromNatural = fromInteger . toInteger

@@ -326,5 +326,5 @@ spec = do
 divideInfo (a, b) (rMode, prefScale) =
   let --(bigDecimal numA _, bigDecimal numB _) = matchScales (a, b)
       (mA, mB)  = matchScales (a, b)
-      maxPrecision = fromMaybe (precision a + round (fromNatural (precision b) * 10 / 3)) prefScale
+      maxPrecision = fromMaybe (precision a + round (fromIntegral (precision b) * 10 / 3)) prefScale
    in (maxPrecision, (value mA) * (10 :: Integer) ^ maxPrecision)

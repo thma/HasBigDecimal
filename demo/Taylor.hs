@@ -7,13 +7,15 @@ module Taylor where
 
 import           Data.BigDecimal
 import           Data.Foldable (toList)
-import           Data.Char (digitToInt, intToDigit)
+--import           Data.Char (digitToInt, intToDigit)
+import           Numeric.Natural
 
 defaultRounding :: RoundingAdvice
 defaultRounding = (DOWN, Just 400)
 
-factorial :: Integer -> BigDecimal
-factorial n = fromIntegral $ product [1..n]       
+factorial :: Natural -> BigDecimal
+factorial = fromIntegral . product . oneToN 
+  where oneToN n = [1..n]   
 
 e :: BigDecimal -> BigDecimal 
 e x = foldr (\i r -> x ^ i / factorial i + r) 0 [0..100]

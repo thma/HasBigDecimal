@@ -154,7 +154,7 @@ piChudnovsky mc@(rMode, Just scl) = divide (1, 12 * divide (fromRatio s mc,f) mc
 
 pI :: RoundingAdvice -> BigDecimal
 pI (_, Nothing)           = error "can't compute pi with umlimited precision"
-pI (_, Just n) = fromString (concat (["3", "."] ++ map show (tail (take (fromNatural n) piList))))
+pI (_, Just n) = fromString (concat (["3", "."] ++ map show (tail (take (fromIntegral n) piList))))
 
 -- This is R. Zumkellers algorithm taken from https://oeis.org/search?q=pi&sort=&language=&go=Search.
 --piList :: Integral a => [a]
