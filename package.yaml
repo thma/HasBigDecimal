@@ -79,6 +79,7 @@ tests:
     - HasBigDecimal
     - hspec
     - QuickCheck
+    - hspec-junit-formatter
     verbatim:
       build-tool-depends:
         hspec-discover:hspec-discover == 2.*

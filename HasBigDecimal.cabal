@@ -75,6 +75,7 @@ test-suite HasBigDecimal-test
       Data.BigDecimalSpec
       Data.BigFloatingSpec
       Data.TestUtils
+      SpecHook
       Paths_HasBigDecimal
   hs-source-dirs:
       test
@@ -84,6 +85,7 @@ test-suite HasBigDecimal-test
     , QuickCheck
     , base >=4.7 && <5
     , hspec
+    , hspec-junit-formatter
     , primitive
   default-language: Haskell2010
   build-tool-depends: hspec-discover:hspec-discover == 2.*

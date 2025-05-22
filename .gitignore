@@ -27,3 +27,4 @@ root
 piServer
 tasks.json
 stack.yaml.lock
+junit.xml
