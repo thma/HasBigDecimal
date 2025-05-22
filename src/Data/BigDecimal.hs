@@ -51,11 +51,11 @@ module Data.BigDecimal
 where
 
 import           Data.List   (elemIndex)
-import           Data.Foldable (foldl')
 import           Data.Maybe  (fromJust, fromMaybe)
 import           Numeric.Natural (Natural)
 import           GHC.Real    (Ratio ((:%)))
 import           Text.Read   (readMaybe)
+import           Data.Char (toLower)
 
 -- | BigDecimal is represented by an unscaled Integer value and a Natural that defines the scale
 --   E.g.: (BigDecimal 1234 2) represents the decimal value 12.34.
@@ -217,16 +217,35 @@ fromString :: String -> BigDecimal
 fromString = fromJust . fromStringMaybe
 
 -- | read a BigDecimal from a human readable decimal notation.
---   e.g. @ fromString "3.14" @ yields 'BigDecimal 314 2'
+--   e.g. @ fromString "3.14" @ yields 'BigDecimal 314 2', i.e 3.14
+--   e.g. @ fromString "3.14e-2" @ yields 'BigDecimal 314 4', i.e 0.0314
+--   e.g. @ fromString "3.14e+2" @ yields 'BigDecimal 31400 2', i.e. 314.00
 fromStringMaybe :: String -> Maybe BigDecimal
-fromStringMaybe s =
-  let maybeIndex = elemIndex '.' s
-      maybeIntValue = readMaybe (filter (/= '.') s)
+fromStringMaybe str =
+  let s = map toLower str
+      -- split the string at the 'e' character
+      -- e.g. "3.14e-2" -> ("3.14", "-2")
+      (s', expo) = case elemIndex 'e' s of
+        Nothing -> (s, Nothing)
+        Just i  -> (take i s, Just $ drop (i + 1) s)
+      -- parse the exponent
+      maybeExponent = case expo of
+        Nothing -> Nothing
+        Just e  -> readMaybe e :: Maybe Int
+      -- parse the decimal part
+      maybeIndex = elemIndex '.' s'
+      maybeIntValue = readMaybe (filter (/= '.') s')
    in do
         intValue <- maybeIntValue
-        case maybeIndex of
-          Nothing -> pure $ bigDecimal intValue 0
-          Just i  -> pure $ bigDecimal intValue (fromIntegral (length s - i - 1))
+        case maybeExponent of
+          Nothing -> case maybeIndex of
+                      Nothing -> pure $ bigDecimal intValue 0
+                      Just i  -> pure $ bigDecimal intValue $ fromIntegral (length s' - i - 1)
+          Just e  -> let op = if e < 0 then (/) else (*)
+                         e' = abs e
+                     in case maybeIndex of
+                          Nothing -> pure $ (bigDecimal intValue 0) `op` (10 ^ e')
+                          Just i  -> pure $ (bigDecimal intValue $ fromIntegral (length s' - i - 1)) `op` (10 ^ e')
 
 -- | returns a readable String representation of a BigDecimal
 --   e.g. @ toString (BigDecimal 314 2) @ yields "3.14"

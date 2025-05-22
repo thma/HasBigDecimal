@@ -25,6 +25,7 @@ description:         Please see the README on GitHub at <https://github.com/thma
 
 dependencies:
 - base >= 4.7 && < 5
+- primitive
 
 library:
   source-dirs: src

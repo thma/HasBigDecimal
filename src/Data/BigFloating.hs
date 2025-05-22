@@ -28,7 +28,7 @@ instance HasRoundingAdvice DOWN_100 where
   roundingAdvice _ = (DOWN, Just 100)  
 
 -- | The type parameter should be an instance of 'HasResolution'.
-newtype BigFloating (a :: k) = BF BigDecimal deriving (Show, Read, Eq, Ord)
+newtype BigFloating (a :: k) = BF BigDecimal deriving (Show, Eq, Ord)
 
 instance (HasRoundingAdvice a) => Num (BigFloating a) where
   (BF a) + (BF b) = BF $ a + b
@@ -154,7 +154,7 @@ piChudnovsky mc@(rMode, Just scl) = divide (1, 12 * divide (fromRatio s mc,f) mc
 
 pI :: RoundingAdvice -> BigDecimal
 pI (_, Nothing)           = error "can't compute pi with umlimited precision"
-pI (_, Just n) = fromString (concat (["3", "."] ++ map show (tail (take (fromNatural n) piList))))
+pI (_, Just n) = fromString (concat (["3", "."] ++ map show (drop 1 (take (fromNatural n) piList))))
 
 -- This is R. Zumkellers algorithm taken from https://oeis.org/search?q=pi&sort=&language=&go=Search.
 --piList :: Integral a => [a]

@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.37.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -37,6 +37,7 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wname-shadowing -Wtype-defaults -Wincomplete-patterns -Wmissing-signatures -Wunused-top-binds
   build-depends:
       base >=4.7 && <5
+    , primitive
   default-language: Haskell2010
 
 executable HasBigDecimal-Demo
@@ -50,6 +51,7 @@ executable HasBigDecimal-Demo
   build-depends:
       HasBigDecimal
     , base >=4.7 && <5
+    , primitive
   default-language: Haskell2010
 
 executable benchmark
@@ -63,6 +65,7 @@ executable benchmark
       HasBigDecimal
     , base >=4.7 && <5
     , criterion
+    , primitive
   default-language: Haskell2010
 
 test-suite HasBigDecimal-test
@@ -81,5 +84,6 @@ test-suite HasBigDecimal-test
     , QuickCheck
     , base >=4.7 && <5
     , hspec
+    , primitive
   default-language: Haskell2010
   build-tool-depends: hspec-discover:hspec-discover == 2.*

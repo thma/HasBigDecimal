@@ -22,6 +22,8 @@ spec = do
   describe "toBD" $ do
     it "reads BigDecimals from strings" $
       fromString "-145.123" `shouldBe` bigDecimal (-145123) 3
+    it "reads BigDecimals from strings with scientific notation" $
+      read "1.234e-3" `shouldBe` (read "0.001234" :: BigDecimal)
     it "is inverse of toString" $
       property $ \bd -> (fromString . show) bd === (bd :: BigDecimal)
 
@@ -294,7 +296,7 @@ spec = do
     it "gives a precise value when using PRECISE and a to small precision" $
       evaluate (divide (-1, -32) (PRECISE, Just 4)) `shouldThrow` anyException
 
-  describe "shrink" $ do
+  describe "trim" $ do
     it "removes trailing zeros while taking care of the scale" $
       nf (bigDecimal 1000 3) `shouldBe` bigDecimal 1 0
     it "does not eliminate more 0s than requested" $
