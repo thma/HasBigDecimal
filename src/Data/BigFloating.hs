@@ -27,7 +27,7 @@ data DOWN_100
 instance HasRoundingAdvice DOWN_100 where
   roundingAdvice _ = (DOWN, Just 100)  
 
--- | The type parameter should be an instance of 'HasResolution'.
+-- | The type parameter should be an instance of 'HasRoundingAdvice'.
 newtype BigFloating (a :: k) = BF BigDecimal deriving (Show, Eq, Ord)
 
 instance (HasRoundingAdvice a) => Num (BigFloating a) where

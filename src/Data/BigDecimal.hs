@@ -46,6 +46,7 @@ module Data.BigDecimal
     fromString,
     fromStringMaybe,
     matchScales,
+    fromNatural
   )
 where
 
@@ -55,7 +56,6 @@ import           Numeric.Natural (Natural)
 import           GHC.Real    (Ratio ((:%)))
 import           Text.Read   (readMaybe)
 import           Data.Char (toLower)
-
 
 -- | BigDecimal is represented by an unscaled Integer value and a Natural that defines the scale
 --   E.g.: (BigDecimal 1234 2) represents the decimal value 12.34.
@@ -264,3 +264,7 @@ toString (BigDecimal intValue scl) =
 -- | construct a 'RoundingAdvice' for rounding 'HALF_UP' with 'scl' decimal digits
 halfUp :: Natural -> RoundingAdvice
 halfUp scl = (HALF_UP, Just scl)
+
+
+fromNatural :: Integral a => Natural -> a
+fromNatural = fromInteger . toInteger
