@@ -24,19 +24,19 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: 'Set up HLint'
-      uses: rwe/actions-hlint-setup@v1
+      uses: rwe/actions-hlint-setup@v2
       with:
         version: '3.3.6'
 
     - name: 'Run HLint'
-      uses: rwe/actions-hlint-run@v1
+      uses: rwe/actions-hlint-run@v2
       with:
         path: src/
         fail-on: warning
           
   linux:
     name: Haskell-CI - Linux - ${{ matrix.compiler }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes:
       60
     container:
@@ -53,11 +53,6 @@ jobs:
           - compiler: ghc-9.0.2
             compilerKind: ghc
             compilerVersion: 9.0.2
-            setup-method: ghcup
-            allow-failure: false
-          - compiler: ghc-8.10.7
-            compilerKind: ghc
-            compilerVersion: 8.10.7
             setup-method: ghcup
             allow-failure: false
       fail-fast: false
@@ -179,7 +174,7 @@ jobs:
           $CABAL v2-build $ARG_COMPILER $ARG_TESTS $ARG_BENCH --dry-run all
           cabal-plan
       - name: cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           key: ${{ runner.os }}-${{ matrix.compiler }}-${{ github.sha }}
           path: ~/.cabal/store
