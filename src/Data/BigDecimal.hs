@@ -50,7 +50,7 @@ module Data.BigDecimal
   )
 where
 
-import           Data.List   (elemIndex)
+import           Data.List   (elemIndex, foldl')
 import           Data.Maybe  (fromJust, fromMaybe)
 import           Numeric.Natural (Natural)
 import           GHC.Real    (Ratio ((:%)))
